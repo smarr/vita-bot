@@ -1,6 +1,7 @@
 import { rmdirSync, existsSync, writeFileSync, mkdirSync } from "fs";
 import { chdir } from "process";
 
+import rimraf from "rimraf";
 const GIT_WORK_FOLDER = ".test";
 const TEST_TEXT = "1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n";
 
@@ -17,7 +18,7 @@ import git from "simple-git/promise";
 describe("Rebase Branch Automatically", function() {
   before(async function() {
     if (existsSync(GIT_WORK_FOLDER)) {
-      rmdirSync(GIT_WORK_FOLDER);
+      rimraf.sync(GIT_WORK_FOLDER);
     }
 
     mkdirSync(GIT_WORK_FOLDER);
