@@ -55,6 +55,8 @@ describe("Rebase Branch Automatically", function() {
     writeFileSync(FILE1, TEST_TEXT + TEST_TEXT.substring(0, TEST_TEXT.length / 2));
     await repo.add(FILE1);
     await repo.commit("Partial extension of " + FILE1);
+
+    chdir("..");
   });
 
   it("basic test", async function() {
