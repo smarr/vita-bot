@@ -1,7 +1,12 @@
-import { rmdirSync, existsSync, writeFileSync, mkdirSync } from "fs";
+import { GitOps } from "../src/git-ops";
+
+import { expect } from "chai";
+import { existsSync, writeFileSync, mkdirSync } from "fs";
 import { chdir } from "process";
 
 import rimraf from "rimraf";
+import git from "simple-git/promise";
+
 const GIT_WORK_FOLDER = ".test";
 const TEST_TEXT = "1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n";
 
@@ -13,7 +18,6 @@ const BRANCH_NO_CONFLICT = "partial";
 const BRANCH_UPSTREAM = "extended";
 const BRANCH_ROOT = "root-master";
 
-import git from "simple-git/promise";
 
 describe("Rebase Branch Automatically", function() {
   before(async function() {
@@ -59,7 +63,17 @@ describe("Rebase Branch Automatically", function() {
     chdir("..");
   });
 
-  it("basic test", async function() {
-    //
+  it("branch without conflicts", async function() {
+    const repo = new GitOps(GIT_WORK_FOLDER);
+    const result = await repo.rebase(BRANCH_NO_CONFLICT, BRANCH_UPSTREAM);
+    expect(result.success).to.be.true;
+  });
+
+  it("branch with conflicts", async function() {
+    const repo = new GitOps(GIT_WORK_FOLDER);
+    const result = await repo.rebase(BRANCH_CONFLICT, BRANCH_UPSTREAM);
+
+    expect(result.success).to.be.false;
+    expect(result.conflicts).to.be.an("array").that.includes(FILE1);
   });
 });
