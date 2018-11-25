@@ -6,11 +6,13 @@
     "simple-git": "^1.107.0"
   },
   "devDependencies": {
+    "@types/js-yaml": "^3.11.2",
     "@types/mocha": "^5.2.5",
     "@types/node": "^10.12.10",
     "@types/rimraf": "^2.0.2",
     "@types/chai": "^4.1.7",
     "chai": "^4.2.0",
+    "js-yaml": "^3.12.0",
     "mocha": "^5.2.0",
     "rimraf": "^2.6.2",
     "tslint": "^5.11.0",
@@ -37,6 +39,6 @@
     "verify": "npm run lint && npm run verifyformat",
     "lint": "node_modules/tslint/bin/tslint -c tslint.json --project tsconfig.json",
     "watch": "node ./node_modules/typescript/bin/tsc -w",
-    "test": "node ./node_modules/mocha/bin/mocha -t 10000 -u bdd ./dist/tests/"
+    "test": "node ./node_modules/mocha/bin/mocha -t 10000000 -u bdd ./dist/tests/"
   }
 }

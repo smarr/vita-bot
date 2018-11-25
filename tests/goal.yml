@@ -1,0 +1,23 @@
+github:
+  user: vita-bot
+
+rebase-on-upstream:
+  graal:
+    repo:
+      url: https://github.com/smarr/truffle.git
+      branch: debugger/master
+      # tags are used to mark accepted versions to keep them available in the repo
+      tags: downstream/debugger-%YYYY-%MM-%DD
+    upstream:
+      url: https://github.com/oracle/graal.git
+      branch: master
+    downstream-users:
+      SOMns:
+        submodule: libs/truffle
+
+downstream-users:
+  SOMns:
+    submodule: libs/truffle
+    upstream:
+      url: https://github.com/oracle/graal.git
+      branch: master
