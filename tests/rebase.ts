@@ -78,8 +78,12 @@ describe("Rebase Branch Automatically", function() {
       rimraf.sync(GIT_DOWNSTREAM_REPO);
     }
 
+    // create downstream repo with both branches, with and without conflict
     const repo = git();
     await repo.clone(GIT_MAIN_REPO, GIT_DOWNSTREAM_REPO, ["-b", BRANCH_CONFLICT]);
+    const downstream = git(GIT_DOWNSTREAM_REPO);
+    await downstream.fetch("origin", BRANCH_NO_CONFLICT);
+    await downstream.branch([BRANCH_NO_CONFLICT, "origin/" + BRANCH_NO_CONFLICT]);
   });
 
   it("branch without conflicts", async function() {
@@ -109,7 +113,7 @@ describe("Rebase Branch Automatically", function() {
   });
 });
 
-describe("Rebase based on configuration", function() {
+describe("Rebase based on goal.yml", function() {
   let graal: any;
 
   before(async function() {
@@ -141,6 +145,38 @@ describe("Rebase based on configuration", function() {
 
     expect(result.success).to.be.false;
     expect(result.conflicts).to.be.an("array");
-    console.log(result.conflicts);
+  });
+});
+
+describe("Rebase based on test.yml", function() {
+  let withoutConflicts: any;
+  let withConflicts: any;
+
+  before(async function() {
+    const config = yaml.safeLoad(
+      readFileSync(__dirname + "/../../tests/test.yml", "utf-8"));
+    withoutConflicts = config["rebase-on-upstream"]["without-conflicts"];
+    withConflicts = config["rebase-on-upstream"]["with-conflicts"];
+  });
+
+  it("rebase without conflicts", async function() {
+    const repo = new Repository(REPO_BASE + "/without-conflicts", withoutConflicts);
+    await repo.clone();
+    await repo.fetchUpstream();
+    const result = await repo.rebaseOnUpstream();
+
+    expect(result.success).to.be.true;
+    expect(result.conflicts).to.be.undefined;
+  });
+
+  it("rebase with conflicts", async function() {
+    const repo = new Repository(REPO_BASE + "/with-conflicts", withConflicts);
+    await repo.clone();
+    await repo.fetchUpstream();
+    const result = await repo.rebaseOnUpstream();
+
+    expect(result.success).to.be.false;
+    expect(result.conflicts).to.be.an("array");
+    expect(result.conflicts).includes(FILE1);
   });
 });

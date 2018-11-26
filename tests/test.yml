@@ -1,0 +1,16 @@
+rebase-on-upstream:
+  without-conflicts:
+    repo:
+      url: ../../.downstream  # the ../../ are needed to access the top-level test folders
+      branch: partial
+    upstream:
+      url: ../../.upstream  # the ../../ are needed to access the top-level test folders
+      branch: extended
+
+  with-conflicts:
+    repo:
+      url: ../../.downstream  # the ../../ are needed to access the top-level test folders
+      branch: replaced
+    upstream:
+      url: ../../.upstream  # the ../../ are needed to access the top-level test folders
+      branch: extended
