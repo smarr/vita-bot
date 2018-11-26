@@ -59,11 +59,6 @@ async function populateMainRepo() {
   await repo.commit("Partial extension of " + FILE1);
 }
 
-async function populateDownstreamRepo() {
-  const repo = git();
-  await repo.init();
-}
-
 describe("Rebase Branch Automatically", function() {
   before(async function() {
     if (existsSync(GIT_MAIN_REPO)) {
