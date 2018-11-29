@@ -13,8 +13,8 @@ export class GitOps {
     this.repo = git(basePath);
   }
 
-  public async fetch(remote: string, branch?: string) {
-    return this.repo.fetch(remote, branch);
+  public async fetch(remoteName: string, branch?: string) {
+    return this.repo.fetch(remoteName, branch);
   }
 
   public async isValidRepository(): Promise<boolean> {
