@@ -1,17 +1,17 @@
-import { GitOps } from "../src/git-ops";
-
-import { expect } from "chai";
-import { existsSync, readFileSync } from "fs";
-
-import yaml from "js-yaml";
-import git from "simple-git/promise";
-import { Repository } from "../src/repository";
 import {
   createMainRepo, createDownstreamRepo, GIT_MAIN_REPO,
   BRANCH_NO_CONFLICT, BRANCH_UPSTREAM, BRANCH_CONFLICT, GIT_DOWNSTREAM_REPO,
   FILE1, REPO_BASE
 } from "./test-repos";
+
 import { Configuration, Rebase } from "../src/config-schema";
+import { GitOps } from "../src/git-ops";
+import { Repository } from "../src/repository";
+
+import { expect } from "chai";
+import { existsSync, readFileSync } from "fs";
+import yaml from "js-yaml";
+import git from "simple-git/promise";
 
 describe("Rebase Branch Automatically", function() {
   before(async function() {
