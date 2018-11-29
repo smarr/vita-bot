@@ -1,89 +1,21 @@
 import { GitOps } from "../src/git-ops";
 
 import { expect } from "chai";
-import { existsSync, writeFileSync, mkdirSync, readFileSync } from "fs";
-import { chdir } from "process";
+import { existsSync, readFileSync } from "fs";
 
 import yaml from "js-yaml";
-import rimraf from "rimraf";
 import git from "simple-git/promise";
 import { Repository } from "../src/repository";
-
-const GIT_MAIN_REPO = ".upstream";
-const GIT_DOWNSTREAM_REPO = ".downstream";
-
-const TEST_TEXT = "1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n";
-
-const FILE1 = "file-1";
-const FILE2 = "file-2";
-
-const BRANCH_CONFLICT = "replaced";
-const BRANCH_NO_CONFLICT = "partial";
-const BRANCH_UPSTREAM = "extended";
-const BRANCH_ROOT = "root-master";
-
-const REPO_BASE = ".base";
-
-async function populateMainRepo() {
-  const repo = git();
-  await repo.init();
-
-  writeFileSync(FILE1, TEST_TEXT);
-  writeFileSync(FILE2, TEST_TEXT);
-  await repo.add(FILE1);
-  await repo.add(FILE2);
-  await repo.commit("Initial Commit");
-  await repo.branch([BRANCH_ROOT]);
-
-  writeFileSync(FILE1, TEST_TEXT + TEST_TEXT);
-  await repo.add(FILE1);
-  await repo.commit("Extend " + FILE1);
-
-  writeFileSync(FILE1, TEST_TEXT + TEST_TEXT + TEST_TEXT);
-  await repo.add(FILE1);
-  await repo.commit(`Extend ${FILE1} more`);
-
-  // the branch representing upstream development
-  await repo.branch([BRANCH_UPSTREAM]);
-
-  // a branch representing local development that will cause a conflict
-  await repo.checkoutBranch(BRANCH_CONFLICT, BRANCH_ROOT);
-  writeFileSync(FILE1, "replaced");
-  await repo.add(FILE1);
-  await repo.commit("Replaced " + FILE1);
-
-  // a branch representing local development that won't cause a conflict
-  await repo.checkoutBranch(BRANCH_NO_CONFLICT, BRANCH_ROOT);
-  writeFileSync(FILE1, TEST_TEXT + TEST_TEXT.substring(0, TEST_TEXT.length / 2));
-  await repo.add(FILE1);
-  await repo.commit("Partial extension of " + FILE1);
-}
+import {
+  createMainRepo, createDownstreamRepo, GIT_MAIN_REPO,
+  BRANCH_NO_CONFLICT, BRANCH_UPSTREAM, BRANCH_CONFLICT, GIT_DOWNSTREAM_REPO,
+  FILE1, REPO_BASE
+} from "./test-repos";
 
 describe("Rebase Branch Automatically", function() {
   before(async function() {
-    if (existsSync(GIT_MAIN_REPO)) {
-      rimraf.sync(GIT_MAIN_REPO);
-    }
-
-    mkdirSync(GIT_MAIN_REPO);
-    chdir(GIT_MAIN_REPO);
-
-    try {
-      await populateMainRepo();
-    } finally {
-      chdir("..");
-    }
-
-    if (existsSync(GIT_DOWNSTREAM_REPO)) {
-      rimraf.sync(GIT_DOWNSTREAM_REPO);
-    }
-
-    // create downstream repo with both branches, with and without conflict
-    const repo = git();
-    await repo.clone(GIT_MAIN_REPO, GIT_DOWNSTREAM_REPO, ["-b", BRANCH_CONFLICT]);
-    const downstream = git(GIT_DOWNSTREAM_REPO);
-    await downstream.fetch("origin", BRANCH_NO_CONFLICT);
-    await downstream.branch([BRANCH_NO_CONFLICT, "origin/" + BRANCH_NO_CONFLICT]);
+    await createMainRepo();
+    await createDownstreamRepo();
   });
 
   it("branch without conflicts", async function() {
