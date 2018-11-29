@@ -11,6 +11,7 @@ import {
   BRANCH_NO_CONFLICT, BRANCH_UPSTREAM, BRANCH_CONFLICT, GIT_DOWNSTREAM_REPO,
   FILE1, REPO_BASE
 } from "./test-repos";
+import { Configuration, Rebase } from "../src/config-schema";
 
 describe("Rebase Branch Automatically", function() {
   before(async function() {
@@ -46,10 +47,10 @@ describe("Rebase Branch Automatically", function() {
 });
 
 describe("Rebase based on goal.yml", function() {
-  let graal: any;
+  let graal: Rebase;
 
   before(async function() {
-    const config = yaml.safeLoad(
+    const config: Configuration = yaml.safeLoad(
       readFileSync(__dirname + "/../../tests/goal.yml", "utf-8"));
     graal = config["rebase-on-upstream"]["graal"];
   });
@@ -81,11 +82,11 @@ describe("Rebase based on goal.yml", function() {
 });
 
 describe("Rebase based on test.yml", function() {
-  let withoutConflicts: any;
-  let withConflicts: any;
+  let withoutConflicts: Rebase;
+  let withConflicts: Rebase;
 
   before(async function() {
-    const config = yaml.safeLoad(
+    const config: Configuration = yaml.safeLoad(
       readFileSync(__dirname + "/../../tests/test.yml", "utf-8"));
     withoutConflicts = config["rebase-on-upstream"]["without-conflicts"];
     withConflicts = config["rebase-on-upstream"]["with-conflicts"];

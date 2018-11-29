@@ -1,12 +1,13 @@
 import { GitOps } from "./git-ops";
 import { existsSync, mkdirSync } from "fs";
+import { Rebase } from "./config-schema";
 
 export class Repository {
   private readonly repo: GitOps;
-  private readonly config: any;
+  private readonly config: Rebase;
   private readonly basePath: string;
 
-  constructor(basePath: string, config: any) {
+  constructor(basePath: string, config: Rebase) {
     this.basePath = basePath;
     this.config = config;
 
