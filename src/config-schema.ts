@@ -19,6 +19,7 @@ export interface GitHub {
 }
 
 export interface User {
+  repo: Repo;
   submodule: string;
   upstream: Repo;
 }

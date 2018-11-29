@@ -83,3 +83,31 @@ export async function createDownstreamRepo() {
   await downstream.fetch("origin", BRANCH_NO_CONFLICT);
   await downstream.branch([BRANCH_NO_CONFLICT, "origin/" + BRANCH_NO_CONFLICT]);
 }
+
+async function populateRepoWithSubmodules() {
+  const repo = git();
+  await repo.init();
+
+  writeFileSync(FILE1, TEST_TEXT);
+  await repo.add(FILE1);
+  await repo.commit("Initial Commit");
+  await repo.subModule(["add", "-b", BRANCH_CONFLICT, "../" + GIT_MAIN_REPO, "with-conflict"]);
+  await repo.subModule(["add", "-b", BRANCH_NO_CONFLICT, "../" + GIT_MAIN_REPO, "without-conflict"]);
+  await repo.subModule(["add", "-b", BRANCH_ROOT, "../" + GIT_MAIN_REPO, "fast-forward"]);
+  await repo.commit("Added submodules");
+}
+
+export async function createRepoWithSubmodules() {
+  if (existsSync(GIT_SUBMODULE_REPO)) {
+    rimraf.sync(GIT_SUBMODULE_REPO);
+  }
+
+  mkdirSync(GIT_SUBMODULE_REPO);
+  chdir(GIT_SUBMODULE_REPO);
+
+  try {
+    await populateRepoWithSubmodules();
+  } finally {
+    chdir("..");
+  }
+}

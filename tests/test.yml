@@ -14,3 +14,34 @@ rebase-on-upstream:
     upstream:
       url: ../../.upstream  # the ../../ are needed to access the top-level test folders
       branch: extended
+
+downstream-users:
+  # changes with conflicting file
+  submodule-with-conflict:
+    repo:
+      url:  .with-submodule
+      branch: partial
+    submodule: with-conflict
+    upstream:
+      url: ../../.upstream
+      branch: extended
+  # changes that have a conflict
+  submodule-without-conflict:
+    repo:
+      url:  .with-submodule
+      branch: replaced
+    submodule: without-conflict
+    upstream:
+      url: ../../.upstream
+      branch: extended
+  # simple fast-forward
+  submodule-fast-forward:
+    repo:
+      url:  .with-submodule
+      branch: root-master
+    submodule: fast-forward
+    upstream:
+      url: ../../.upstream
+      branch: extended
+
+
