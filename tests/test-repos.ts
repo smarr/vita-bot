@@ -26,7 +26,7 @@ export const BRANCH_UPSTREAM = "extended";
 export const BRANCH_ROOT = "root-master";
 
 export function loadTestConfig(path: string): Configuration {
-  const content = readFileSync(path, { encoding: "utf-8"});
+  const content = readFileSync(path, { encoding: "utf-8" });
 
   const re = new RegExp(/\$BASE\$/g);
   const contentWithRepoBase = content.replace(re, REPO_BASE);
@@ -75,10 +75,14 @@ async function populateMainRepo() {
   await repo.commit("Partial extension of " + FILE1);
 }
 
-export async function createMainRepo() {
-  if (existsSync(GIT_MAIN_REPO)) {
-    rimraf.sync(GIT_MAIN_REPO);
+let mainCreated = false;
+
+export async function ensureMainRepo() {
+  if (mainCreated === true) {
+    return;
   }
+
+  ensureRepoDoesNotExist(GIT_MAIN_REPO);
 
   mkdirSync(GIT_MAIN_REPO, { recursive: true });
   chdir(GIT_MAIN_REPO);
@@ -87,22 +91,31 @@ export async function createMainRepo() {
     await populateMainRepo();
   } finally {
     chdir("..");
+    mainCreated = true;
   }
 }
+
+let downstreamCreated = false;
 
 /**
  * Create downstream repo with both branches, with and without conflict.
  */
-export async function createDownstreamRepo() {
-  if (existsSync(GIT_DOWNSTREAM_REPO)) {
-    rimraf.sync(GIT_DOWNSTREAM_REPO);
+export async function ensureDownstreamRepo() {
+  if (downstreamCreated === true) {
+    return;
   }
+
+  await ensureMainRepo();
+
+  ensureRepoDoesNotExist(GIT_DOWNSTREAM_REPO);
 
   const repo = git();
   await repo.clone(GIT_MAIN_REPO, GIT_DOWNSTREAM_REPO, ["-b", BRANCH_CONFLICT]);
   const downstream = git(GIT_DOWNSTREAM_REPO);
   await downstream.fetch("origin", BRANCH_NO_CONFLICT);
   await downstream.branch([BRANCH_NO_CONFLICT, "origin/" + BRANCH_NO_CONFLICT]);
+
+  downstreamCreated = true;
 }
 
 async function populateRepoWithSubmodules() {
@@ -118,10 +131,16 @@ async function populateRepoWithSubmodules() {
   await repo.commit("Added submodules");
 }
 
-export async function createRepoWithSubmodules() {
-  if (existsSync(GIT_SUBMODULE_REPO)) {
-    rimraf.sync(GIT_SUBMODULE_REPO);
+let submoduleCreated = false;
+
+export async function ensureRepoWithSubmodules() {
+  if (submoduleCreated === true) {
+    return;
   }
+
+  await ensureMainRepo();
+
+  ensureRepoDoesNotExist(GIT_SUBMODULE_REPO);
 
   mkdirSync(GIT_SUBMODULE_REPO, { recursive: true });
   chdir(GIT_SUBMODULE_REPO);
@@ -130,5 +149,12 @@ export async function createRepoWithSubmodules() {
     await populateRepoWithSubmodules();
   } finally {
     chdir("..");
+    submoduleCreated = true;
+  }
+}
+
+export function ensureRepoDoesNotExist(path: string) {
+  if (existsSync(path)) {
+    rimraf.sync(path);
   }
 }

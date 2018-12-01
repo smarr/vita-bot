@@ -1,7 +1,6 @@
 import {
-  createMainRepo, createDownstreamRepo, GIT_MAIN_REPO,
-  BRANCH_NO_CONFLICT, BRANCH_UPSTREAM, BRANCH_CONFLICT, GIT_DOWNSTREAM_REPO,
-  REPO_BASE, expectConflict
+  GIT_MAIN_REPO, BRANCH_NO_CONFLICT, BRANCH_UPSTREAM, BRANCH_CONFLICT,
+  GIT_DOWNSTREAM_REPO, REPO_BASE, expectConflict, ensureMainRepo, ensureDownstreamRepo
 } from "./test-repos";
 
 import { Configuration, Submodule } from "../src/config-schema";
@@ -14,8 +13,8 @@ import rimraf = require("rimraf");
 
 describe("Rebase Branch Automatically", function() {
   before(async function() {
-    await createMainRepo();
-    await createDownstreamRepo();
+    await ensureMainRepo();
+    await ensureDownstreamRepo();
   });
 
   it("branch without conflicts", async function() {
