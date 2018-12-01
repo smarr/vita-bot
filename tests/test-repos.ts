@@ -17,8 +17,8 @@ export const GIT_SUBMODULE_REPO = `${REPO_BASE}/with-submodule`;
 
 export const TEST_TEXT = "1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n";
 
-export const FILE1 = "file-1";
-export const FILE2 = "file-2";
+const FILE1 = "file-1";
+const FILE2 = "file-2";
 
 export const BRANCH_CONFLICT = "replaced";
 export const BRANCH_NO_CONFLICT = "partial";
