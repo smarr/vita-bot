@@ -1,27 +1,24 @@
 import { createRepoWithSubmodules, FILE1, expectConflict, REPO_BASE } from "./test-repos";
 
 import { GitOps } from "../src/git-ops";
-import { Configuration, UpdateSubmodule } from "../src/config-schema";
+import { UpdateSubmodule } from "../src/config-schema";
 
 import { expect } from "chai";
-import { readFileSync } from "fs";
-import yaml from "js-yaml";
 
-describe("Update submodule", function() {
-  let configuration: { [key: string]: UpdateSubmodule };
+import { Repository } from "../src/repository";
 
+const configuration: { [key: string]: UpdateSubmodule } = loadTestConfig(
+  __dirname + "/../../tests/test.yml")["update-submodule"];
+
+describe("Update submodule, without touching main repo", function() {
   before(async function() {
-    await createRepoWithSubmodules();
-
-    const config: Configuration = yaml.safeLoad(
-      readFileSync(__dirname + "/../../tests/test.yml", "utf-8"));
-    configuration = config["update-submodule"];
+    await ensureRepoWithSubmodules();
   });
 
   it("update submodule simply with a fast forward", async function() {
     const updateConfig: UpdateSubmodule = configuration["submodule-fast-forward"];
 
-    const repo = new GitOps(REPO_BASE + "/" + updateConfig.repo.url + "/" + updateConfig.submodule.path);
+    const repo = new GitOps(updateConfig.repo.url + "/" + updateConfig.submodule.path);
     await repo.ensureRemote("upstream", updateConfig.submodule.upstream.url);
     await repo.fetch("upstream", updateConfig.submodule.upstream.branch);
 
@@ -32,7 +29,7 @@ describe("Update submodule", function() {
   it("update submodule with simple rebase", async function() {
     const updateConfig: UpdateSubmodule = configuration["submodule-without-conflict"];
 
-    const repo = new GitOps(REPO_BASE + "/" + updateConfig.repo.url + "/" + updateConfig.submodule.path);
+    const repo = new GitOps(updateConfig.repo.url + "/" + updateConfig.submodule.path);
     await repo.ensureRemote("upstream", updateConfig.submodule.upstream.url);
     await repo.fetch("upstream", updateConfig.submodule.upstream.branch);
 
@@ -45,7 +42,7 @@ describe("Update submodule", function() {
   it("update submodule but fail with conflict", async function() {
     const updateConfig: UpdateSubmodule = configuration["submodule-with-conflict"];
 
-    const repo = new GitOps(REPO_BASE + "/" + updateConfig.repo.url + "/" + updateConfig.submodule.path);
+    const repo = new GitOps(updateConfig.repo.url + "/" + updateConfig.submodule.path);
     await repo.ensureRemote("upstream", updateConfig.submodule.upstream.url);
     await repo.fetch("upstream", updateConfig.submodule.upstream.branch);
 

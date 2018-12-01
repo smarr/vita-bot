@@ -21,36 +21,37 @@ update-submodule:
   # changes with conflicting file
   submodule-with-conflict:
     repo:
-      url:  with-submodule
+      url:  $BASE$/with-submodule
     submodule:
       repo:
-        url: ../../upstream
+        url: $BASE$/upstream
         branch: replaced
       path: with-conflict
       upstream:
-        url: ../../upstream
+        url: $BASE$/upstream
         branch: extended
   # changes that have a conflict
   submodule-without-conflict:
     repo:
-      url:  with-submodule
+      url:  $BASE$/with-submodule
     submodule:
       repo:
-        url: ../../upstream
+        url: $BASE$/upstream
         branch: partial
       path: without-conflict
       upstream:
-        url: ../../upstream
+        url: $BASE$/upstream
         branch: extended
   # simple fast-forward
   submodule-fast-forward:
     repo:
-      url:  with-submodule
+      url:  $BASE$/with-submodule
+      branch: master
     submodule:
       repo:
-        url: ../../upstream
+        url: $BASE$/upstream
         branch: root-master
       path: fast-forward
       upstream:
-        url: ../../upstream
+        url: $BASE$/upstream
         branch: extended

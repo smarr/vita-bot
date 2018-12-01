@@ -1,12 +1,15 @@
+import { Configuration } from "../src/config-schema";
+
 import { expect } from "chai";
-import { writeFileSync, existsSync, mkdirSync } from "fs";
+import { writeFileSync, existsSync, mkdirSync, readFileSync } from "fs";
 import { chdir } from "process";
-import rimraf = require("rimraf");
+import rimraf from "rimraf";
 import git from "simple-git/promise";
 import { normalize } from "path";
 
-export const REPO_BASE = normalize(`${__dirname}/../../.base`);
+import yaml from "js-yaml";
 
+export const REPO_BASE = normalize(`${__dirname}/../../.base`);
 
 export const GIT_MAIN_REPO = `${REPO_BASE}/upstream`;
 export const GIT_DOWNSTREAM_REPO = `${REPO_BASE}/downstream`;
@@ -21,6 +24,14 @@ export const BRANCH_CONFLICT = "replaced";
 export const BRANCH_NO_CONFLICT = "partial";
 export const BRANCH_UPSTREAM = "extended";
 export const BRANCH_ROOT = "root-master";
+
+export function loadTestConfig(path: string): Configuration {
+  const content = readFileSync(path, { encoding: "utf-8"});
+
+  const re = new RegExp(/\$BASE\$/g);
+  const contentWithRepoBase = content.replace(re, REPO_BASE);
+  return yaml.safeLoad(contentWithRepoBase);
+}
 
 export function expectConflict(result: { success: boolean; msg: string; conflicts?: string[] | undefined; }) {
   expect(result.success).to.be.false;
