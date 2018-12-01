@@ -1,4 +1,4 @@
-import { createRepoWithSubmodules, FILE1, expectConflict, REPO_BASE } from "./test-repos";
+import { expectConflict, REPO_BASE, loadTestConfig, ensureRepoWithSubmodules, ensureRepoDoesNotExist } from "./test-repos";
 
 import { GitOps } from "../src/git-ops";
 import { UpdateSubmodule } from "../src/config-schema";
@@ -50,3 +50,19 @@ describe("Update submodule, without touching main repo", function() {
     expectConflict(result);
   });
 });
+
+describe("Update submodule and update main repo", function() {
+  before(async function() {
+    await ensureRepoWithSubmodules();
+  });
+
+  it("update submodule simply with a fast forward", async function() {
+    ensureRepoDoesNotExist(REPO_BASE + "/fast-forward");
+
+    const repo = new Repository(REPO_BASE + "/fast-forward", configuration["submodule-fast-forward"]);
+    await repo.cloneOrUpdate();
+    const result = await repo.updateSubmodule();
+    expect(result.success).to.be.true;
+  });
+});
+

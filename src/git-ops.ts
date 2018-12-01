@@ -100,10 +100,25 @@ export class GitOps {
     }
   }
 
+  public async ensureBranch(remoteName: string, branch: string) {
+    await this.repo.reset("hard");
+    const branches = await this.repo.branchLocal();
+    if (branches.all.includes(branch)) {
+      return Promise.resolve();
+    } else {
+      return this.repo.checkoutBranch(branch, remoteName + "/" + branch);
+    }
+  }
+
   public async ensureLatest(branch: string) {
     await this.repo.reset("hard");
     await this.repo.checkout(branch);
     await this.repo.pull();
+    return Promise.resolve();
+  }
+
+  public async submoduleUpdate(path: string) {
+    await this.repo.submoduleUpdate(["--init", path]);
     return Promise.resolve();
   }
 }
