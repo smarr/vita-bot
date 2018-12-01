@@ -1,8 +1,12 @@
 import git, { SimpleGit } from "simple-git/promise";
-import { existsSync } from "fs";
+import { existsSync, mkdirSync } from "fs";
 
+/**
+ * High-level operations on git repositories.
+ */
 export class GitOps {
   private static readonly FAILED_MERGE_ERR = "Failed to merge";
+  private static readonly WORK_IN_PROGRESS_BRANCH = "vita-bot-WIP";
 
   private readonly repo: SimpleGit;
 
@@ -10,7 +14,22 @@ export class GitOps {
 
   constructor(basePath: string) {
     this.basePath = basePath;
+
+    if (!existsSync(basePath)) {
+      mkdirSync(basePath, { recursive: true });
+    }
+
     this.repo = git(basePath);
+    this.repo.silent(true);
+  }
+
+  public async cloneOrUpdate(repoUrl: string, branchName: string): Promise<void> {
+    if (!(await this.isValidRepository())) {
+      await this.clone(repoUrl, branchName);
+      return Promise.resolve();
+    } else {
+      return this.ensureLatest(branchName);
+    }
   }
 
   public async fetch(remoteName: string, branch?: string) {
@@ -31,7 +50,12 @@ export class GitOps {
   }
 
   public async rebase(branch: string, ontoUpstream: string): Promise<{ success: boolean, msg: string, conflicts?: string[] }> {
-    await this.repo.checkout(branch);
+    const branches = await this.repo.branchLocal();
+    if (branches.all.includes(GitOps.WORK_IN_PROGRESS_BRANCH)) {
+      await this.repo.checkout(branch);
+      await this.repo.branch(["-D", GitOps.WORK_IN_PROGRESS_BRANCH]);
+    }
+    await this.repo.checkoutBranch(GitOps.WORK_IN_PROGRESS_BRANCH, branch);
 
     try {
       const rebaseResult = await this.repo.rebase([ontoUpstream]);
@@ -74,5 +98,12 @@ export class GitOps {
     if (!found) {
       await this.repo.addRemote(name, url);
     }
+  }
+
+  public async ensureLatest(branch: string) {
+    await this.repo.reset("hard");
+    await this.repo.checkout(branch);
+    await this.repo.pull();
+    return Promise.resolve();
   }
 }

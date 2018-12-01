@@ -1,11 +1,16 @@
+import { expect } from "chai";
 import { writeFileSync, existsSync, mkdirSync } from "fs";
-import git from "simple-git/promise";
-import rimraf = require("rimraf");
 import { chdir } from "process";
+import rimraf = require("rimraf");
+import git from "simple-git/promise";
+import { normalize } from "path";
 
-export const GIT_MAIN_REPO = ".upstream";
-export const GIT_DOWNSTREAM_REPO = ".downstream";
-export const GIT_SUBMODULE_REPO = ".with-submodule";
+export const REPO_BASE = normalize(`${__dirname}/../../.base`);
+
+
+export const GIT_MAIN_REPO = `${REPO_BASE}/upstream`;
+export const GIT_DOWNSTREAM_REPO = `${REPO_BASE}/downstream`;
+export const GIT_SUBMODULE_REPO = `${REPO_BASE}/with-submodule`;
 
 export const TEST_TEXT = "1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n";
 
@@ -17,7 +22,12 @@ export const BRANCH_NO_CONFLICT = "partial";
 export const BRANCH_UPSTREAM = "extended";
 export const BRANCH_ROOT = "root-master";
 
-export const REPO_BASE = ".base";
+export function expectConflict(result: { success: boolean; msg: string; conflicts?: string[] | undefined; }) {
+  expect(result.success).to.be.false;
+  expect(result.conflicts).to.be.an("array");
+  expect(result.conflicts).to.include(FILE1);
+  expect(result.conflicts).to.have.lengthOf(1);
+}
 
 async function populateMainRepo() {
   const repo = git();
@@ -59,7 +69,7 @@ export async function createMainRepo() {
     rimraf.sync(GIT_MAIN_REPO);
   }
 
-  mkdirSync(GIT_MAIN_REPO);
+  mkdirSync(GIT_MAIN_REPO, { recursive: true });
   chdir(GIT_MAIN_REPO);
 
   try {
@@ -91,9 +101,9 @@ async function populateRepoWithSubmodules() {
   writeFileSync(FILE1, TEST_TEXT);
   await repo.add(FILE1);
   await repo.commit("Initial Commit");
-  await repo.subModule(["add", "-b", BRANCH_CONFLICT, "../" + GIT_MAIN_REPO, "with-conflict"]);
-  await repo.subModule(["add", "-b", BRANCH_NO_CONFLICT, "../" + GIT_MAIN_REPO, "without-conflict"]);
-  await repo.subModule(["add", "-b", BRANCH_ROOT, "../" + GIT_MAIN_REPO, "fast-forward"]);
+  await repo.subModule(["add", "-b", BRANCH_CONFLICT, GIT_MAIN_REPO, "with-conflict"]);
+  await repo.subModule(["add", "-b", BRANCH_NO_CONFLICT, GIT_MAIN_REPO, "without-conflict"]);
+  await repo.subModule(["add", "-b", BRANCH_ROOT, GIT_MAIN_REPO, "fast-forward"]);
   await repo.commit("Added submodules");
 }
 
@@ -102,7 +112,7 @@ export async function createRepoWithSubmodules() {
     rimraf.sync(GIT_SUBMODULE_REPO);
   }
 
-  mkdirSync(GIT_SUBMODULE_REPO);
+  mkdirSync(GIT_SUBMODULE_REPO, { recursive: true });
   chdir(GIT_SUBMODULE_REPO);
 
   try {

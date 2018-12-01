@@ -1,38 +1,43 @@
 import { GitOps } from "./git-ops";
-import { existsSync, mkdirSync } from "fs";
-import { Rebase } from "./config-schema";
+import { UpdateSubmodule } from "./config-schema";
 
+const BOT_UPSTREAM = "vita-bot-upstream";
+
+/**
+ * A repository and a specific update task associated with it.
+ *
+ * The main responsibility of `Repository` is to provide the operations
+ * to perform the desired updates.
+ */
 export class Repository {
   private readonly repo: GitOps;
-  private readonly config: Rebase;
+  private readonly config: UpdateSubmodule;
   private readonly basePath: string;
 
-  constructor(basePath: string, config: Rebase) {
+  constructor(basePath: string, config: UpdateSubmodule) {
     this.basePath = basePath;
     this.config = config;
 
-    if (!existsSync(basePath)) {
-      mkdirSync(basePath, { recursive: true });
-    }
     this.repo = new GitOps(basePath);
   }
 
-  public async clone(): Promise<void> {
-    if (!(await this.repo.isValidRepository())) {
-      await this.repo.clone(this.config.repo.url, this.config.repo.branch);
-      return Promise.resolve();
-    } else {
-      return Promise.resolve();
-    }
+  /**
+   * Get latest version of the main repository and branch.
+   */
+  public async cloneOrUpdate(): Promise<void> {
+    return this.repo.cloneOrUpdate(
+      this.config.repo.url, this.config.repo.branch);
   }
 
-  public async fetchUpstream(): Promise<void> {
-    await this.repo.ensureRemote("upstream", this.config.upstream.url);
-    await this.repo.fetch("upstream", this.config.upstream.branch);
+  public async updateSubmodule(): Promise<void> {
+    throw new Error("Not yet implemented");
   }
 
-  public async rebaseOnUpstream(): Promise<{ success: boolean, msg: string, conflicts?: string[] }> {
-    return this.repo.rebase(
-      this.config.repo.branch, "upstream/" + this.config.upstream.branch);
+  public async fetchSubmoduleUpstream(): Promise<void> {
+    throw new Error("Not yet implemented");
+  }
+
+  public async rebaseSubmoduleOnUpstream(): Promise<{ success: boolean, msg: string, conflicts?: string[] }> {
+    throw new Error("Not yet implemented");
   }
 }
