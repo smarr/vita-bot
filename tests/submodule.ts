@@ -72,6 +72,7 @@ describe("Update submodule and update main repo", function() {
     const result = await repo.updateSubmodule();
     expect(result.success).to.be.true;
     expect(result.fastForward).to.be.true;
+
     expect(result.heads.beforeUpdate.author_name).to.equal(testConfig.bot.name);
     expect(result.heads.beforeUpdate.author_email).to.equal(testConfig.bot.email);
 
@@ -80,6 +81,51 @@ describe("Update submodule and update main repo", function() {
 
     expect(result.heads.afterUpdate.author_name).to.equal(testConfig.bot.name);
     expect(result.heads.afterUpdate.author_email).to.equal(testConfig.bot.email);
+  });
+
+  it("update submodule with conflict", async function() {
+    ensureRepoDoesNotExist(REPO_BASE + "/with-conflict");
+
+    const repo = new Repository(
+      REPO_BASE + "/with-conflict", configuration["submodule-with-conflict"],
+      testConfig.bot);
+    await repo.cloneOrUpdate();
+    const result = await repo.updateSubmodule();
+    expect(result.success).to.be.false;
+    expect(result.fastForward).to.be.false;
+
+    expect(result.heads.beforeUpdate.author_name).to.equal(testConfig.bot.name);
+    expect(result.heads.beforeUpdate.author_email).to.equal(testConfig.bot.email);
+
+    expect(result.heads.upstream.author_name).to.equal(testConfig.bot.name);
+    expect(result.heads.upstream.author_email).to.equal(testConfig.bot.email);
+
+    expect(result.heads.beforeUpdate.hash).to.equal(result.heads.afterUpdate.hash);
+
+  });
+
+  it("update submodule without conflict", async function() {
+    ensureRepoDoesNotExist(REPO_BASE + "/with-conflict");
+
+    const repo = new Repository(
+      REPO_BASE + "/without-conflict", configuration["submodule-without-conflict"],
+      testConfig.bot);
+    await repo.cloneOrUpdate();
+    const result = await repo.updateSubmodule();
+    expect(result.success).to.be.true;
+    expect(result.fastForward).to.be.false;
+
+    expect(result.heads.beforeUpdate.author_name).to.equal(testConfig.bot.name);
+    expect(result.heads.beforeUpdate.author_email).to.equal(testConfig.bot.email);
+
+    expect(result.heads.upstream.author_name).to.equal(testConfig.bot.name);
+    expect(result.heads.upstream.author_email).to.equal(testConfig.bot.email);
+
+    expect(result.heads.afterUpdate.author_name).to.equal(testConfig.bot.name);
+    expect(result.heads.afterUpdate.author_email).to.equal(testConfig.bot.email);
+
+    expect(result.heads.afterUpdate.hash).to.not.equal(result.heads.beforeUpdate.hash);
+    expect(result.heads.afterUpdate.hash).to.not.equal(result.heads.upstream.hash);
   });
 });
 

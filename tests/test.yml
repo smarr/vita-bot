@@ -26,6 +26,7 @@ update-submodule:
   submodule-with-conflict:
     repo:
       url:  $BASE$/with-submodule
+      branch: master
     submodule:
       repo:
         url: $BASE$/upstream
@@ -38,6 +39,7 @@ update-submodule:
   submodule-without-conflict:
     repo:
       url:  $BASE$/with-submodule
+      branch: master
     submodule:
       repo:
         url: $BASE$/upstream
