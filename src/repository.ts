@@ -1,8 +1,20 @@
-import { GitOps } from "./git-ops";
+import { GitOps, RebaseResult } from "./git-ops";
 import { UpdateSubmodule, BotDetails } from "./config-schema";
+import { DefaultLogFields } from "simple-git/typings/response";
 
 const BOT_UPSTREAM_REMOTE = "vita-bot-upstream";
 const ORIGIN_REMOTE = "origin";
+
+export interface SubmoduleUpdateResult {
+  success: boolean;
+  fastForward: boolean;
+  rebase: RebaseResult;
+  heads: {
+    beforeUpdate: DefaultLogFields,
+    upstream: DefaultLogFields,
+    afterUpdate: DefaultLogFields
+  };
+}
 
 /**
  * A repository and a specific update task associated with it.
@@ -45,7 +57,7 @@ export class Repository {
       this.config.repo.url, this.config.repo.branch);
   }
 
-  public async updateSubmodule(): Promise<{ success: boolean, msg: string, conflicts?: string[] }> {
+  public async updateSubmodule(): Promise<SubmoduleUpdateResult> {
     await this.repo.submoduleUpdate(this.config.submodule.path);
 
     if (this.subRepo === undefined) {
@@ -53,6 +65,8 @@ export class Repository {
         this.basePath + "/" + this.config.submodule.path,
         this.bot.name, this.bot.email);
     }
+
+    const preUpdateHead = await this.subRepo.getHead();
 
     const upstream = this.config.submodule.upstream;
 
@@ -65,9 +79,25 @@ export class Repository {
     await this.subRepo.ensureRemote(BOT_UPSTREAM_REMOTE, upstream.url);
     await this.subRepo.fetch(BOT_UPSTREAM_REMOTE, upstream.branch);
 
-    const result = /* await */ this.subRepo.rebase(
+    const preMergeHead = await this.subRepo.getHead(BOT_UPSTREAM_REMOTE, upstream.branch);
+
+    const rebaseResult = await this.subRepo.rebase(
       this.config.submodule.repo.branch, BOT_UPSTREAM_REMOTE + "/" + upstream.branch);
-    return result;
+
+    const postRebaseHead = await this.subRepo.getHead();
+
+    const isFastForward = preMergeHead.hash === postRebaseHead.hash;
+
+    return Promise.resolve({
+      success: rebaseResult.success,
+      rebase: rebaseResult,
+      fastForward: isFastForward,
+      heads: {
+        beforeUpdate: preUpdateHead,
+        upstream: preMergeHead,
+        afterUpdate: postRebaseHead
+      }
+    });
   }
 
   protected async rebaseSubmoduleOnUpstream(): Promise<{ success: boolean, msg: string, conflicts?: string[] }> {

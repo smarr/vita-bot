@@ -71,6 +71,15 @@ describe("Update submodule and update main repo", function() {
     await repo.cloneOrUpdate();
     const result = await repo.updateSubmodule();
     expect(result.success).to.be.true;
+    expect(result.fastForward).to.be.true;
+    expect(result.heads.beforeUpdate.author_name).to.equal(testConfig.bot.name);
+    expect(result.heads.beforeUpdate.author_email).to.equal(testConfig.bot.email);
+
+    expect(result.heads.upstream.author_name).to.equal(testConfig.bot.name);
+    expect(result.heads.upstream.author_email).to.equal(testConfig.bot.email);
+
+    expect(result.heads.afterUpdate.author_name).to.equal(testConfig.bot.name);
+    expect(result.heads.afterUpdate.author_email).to.equal(testConfig.bot.email);
   });
 });
 

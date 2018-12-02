@@ -1,5 +1,6 @@
 import git, { SimpleGit } from "simple-git/promise";
 import { existsSync, mkdirSync } from "fs";
+import { DefaultLogFields } from "simple-git/typings/response";
 
 /**
  * Set author and committer information on the repository.
@@ -9,6 +10,20 @@ export function setAuthorInfo(repo: SimpleGit, authorName: string, authorEmail: 
   repo.env("GIT_AUTHOR_EMAIL", authorEmail);
   repo.env("GIT_COMMITTER_NAME", authorName);
   repo.env("GIT_COMMITTER_EMAIL", authorEmail);
+}
+
+export interface RebaseResult {
+  /** True, if the rebase operation succeeded. */
+  success: boolean;
+
+  /** Text output of rebase operation. */
+  msg: string;
+
+  /**
+   * The files involved in the first conflict of the rebase operation.
+   * If these conflicts would be resolved, there may still be other conflicts.
+   */
+  conflicts?: string[];
 }
 
 /**
@@ -60,7 +75,7 @@ export class GitOps {
     return this.repo.clone(url, ".", ["-b", branch]); // "." implies the basePath
   }
 
-  public async rebase(branch: string, ontoUpstream: string): Promise<{ success: boolean, msg: string, conflicts?: string[] }> {
+  public async rebase(branch: string, ontoUpstream: string): Promise<RebaseResult> {
     const branches = await this.repo.branchLocal();
     if (branches.all.includes(GitOps.WORK_IN_PROGRESS_BRANCH)) {
       await this.repo.checkout(branch);
@@ -128,8 +143,27 @@ export class GitOps {
     return Promise.resolve();
   }
 
+  /**
+   * Initializes and checks out the given submodule.
+   * This also makes sure that the submodule is at the commit currently
+   * specified in the git repository.
+   */
   public async submoduleUpdate(path: string) {
     await this.repo.submoduleUpdate(["--init", path]);
     return Promise.resolve();
+  }
+
+  public async getHead(): Promise<DefaultLogFields>;
+  public async getHead(remoteName: string, branch: string): Promise<DefaultLogFields>
+  public async getHead(remoteName?: string, branch?: string): Promise<DefaultLogFields> {
+    const options: any = {n: 1};
+    if (remoteName !== undefined && branch !== undefined) {
+      options[remoteName + "/" + branch] = undefined;
+    } else {
+      options["."] = undefined;
+    }
+
+    const result = await this.repo.log(options);
+    return Promise.resolve(result.latest);
   }
 }
