@@ -53,8 +53,7 @@ export class GitOps {
       return Promise.resolve(false);
     }
 
-    const result = await this.repo.revparse(["--is-inside-work-tree"]);
-    return Promise.resolve(result.trim() === "true");
+    return this.repo.checkIsRepo();
   }
 
   public async clone(url: string, branch: string): Promise<string> {
