@@ -11,6 +11,9 @@ import { readFileSync, existsSync } from "fs";
 import yaml from "js-yaml";
 import rimraf = require("rimraf");
 
+const config: Configuration = yaml.safeLoad(
+  readFileSync(__dirname + "/../../tests/test.yml", "utf-8"));
+
 describe("Rebase Branch Automatically", function() {
   before(async function() {
     await ensureMainRepo();
@@ -18,13 +21,13 @@ describe("Rebase Branch Automatically", function() {
   });
 
   it("branch without conflicts", async function() {
-    const repo = new GitOps(GIT_MAIN_REPO);
+    const repo = new GitOps(GIT_MAIN_REPO, config.bot.name, config.bot.email);
     const result = await repo.rebase(BRANCH_NO_CONFLICT, BRANCH_UPSTREAM);
     expect(result.success).to.be.true;
   });
 
   it("branch with conflicts", async function() {
-    const repo = new GitOps(GIT_MAIN_REPO);
+    const repo = new GitOps(GIT_MAIN_REPO, config.bot.name, config.bot.email);
     const result = await repo.rebase(BRANCH_CONFLICT, BRANCH_UPSTREAM);
 
     expectConflict(result);
@@ -32,7 +35,7 @@ describe("Rebase Branch Automatically", function() {
 
   describe("Remote upstream repo", function() {
     it("fetch upstream branch and try rebase", async function() {
-      const repo = new GitOps(GIT_DOWNSTREAM_REPO);
+      const repo = new GitOps(GIT_DOWNSTREAM_REPO, config.bot.name, config.bot.email);
 
       await repo.fetch(GIT_MAIN_REPO);
       const result = await repo.rebase(BRANCH_CONFLICT, "origin/" + BRANCH_UPSTREAM);
@@ -47,8 +50,6 @@ describe("Rebase based on test.yml", function() {
   let withConflicts: Submodule;
 
   before(async function() {
-    const config: Configuration = yaml.safeLoad(
-      readFileSync(__dirname + "/../../tests/test.yml", "utf-8"));
     withoutConflicts = config["update-submodule"]["basic-without-conflicts"].submodule;
     withConflicts = config["update-submodule"]["basic-with-conflicts"].submodule;
   });
@@ -58,7 +59,7 @@ describe("Rebase based on test.yml", function() {
       rimraf.sync(REPO_BASE + "/without-conflicts");
     }
 
-    const repo = new GitOps(REPO_BASE + "/without-conflicts");
+    const repo = new GitOps(REPO_BASE + "/without-conflicts", config.bot.name, config.bot.email);
     await repo.cloneOrUpdate(withoutConflicts.repo.url, withoutConflicts.repo.branch);
     await repo.ensureRemote("upstream", withoutConflicts.upstream.url);
     await repo.fetch("upstream", withoutConflicts.upstream.branch);
@@ -73,7 +74,7 @@ describe("Rebase based on test.yml", function() {
       rimraf.sync(REPO_BASE + "/with-conflicts");
     }
 
-    const repo = new GitOps(REPO_BASE + "/with-conflicts");
+    const repo = new GitOps(REPO_BASE + "/with-conflicts", config.bot.name, config.bot.email);
     await repo.cloneOrUpdate(withConflicts.repo.url, withConflicts.repo.branch);
     await repo.ensureRemote("upstream", withConflicts.upstream.url);
     await repo.fetch("upstream", withConflicts.upstream.branch);

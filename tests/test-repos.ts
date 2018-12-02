@@ -8,6 +8,7 @@ import git from "simple-git/promise";
 import { normalize } from "path";
 
 import yaml from "js-yaml";
+import { setAuthorInfo } from "../src/git-ops";
 
 export const REPO_BASE = normalize(`${__dirname}/../../.base`);
 
@@ -42,6 +43,7 @@ export function expectConflict(result: { success: boolean; msg: string; conflict
 
 async function populateMainRepo() {
   const repo = git();
+  setAuthorInfo(repo, "Vita Bot", "vita-bot@stefan-marr.de");
   await repo.init();
 
   writeFileSync(FILE1, TEST_TEXT);

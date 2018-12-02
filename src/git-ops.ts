@@ -2,6 +2,16 @@ import git, { SimpleGit } from "simple-git/promise";
 import { existsSync, mkdirSync } from "fs";
 
 /**
+ * Set author and committer information on the repository.
+ */
+export function setAuthorInfo(repo: SimpleGit, authorName: string, authorEmail: string) {
+  repo.env("GIT_AUTHOR_NAME", authorName);
+  repo.env("GIT_AUTHOR_EMAIL", authorEmail);
+  repo.env("GIT_COMMITTER_NAME", authorName);
+  repo.env("GIT_COMMITTER_EMAIL", authorEmail);
+}
+
+/**
  * High-level operations on git repositories.
  */
 export class GitOps {
@@ -12,7 +22,7 @@ export class GitOps {
 
   private readonly basePath: string;
 
-  constructor(basePath: string) {
+  constructor(basePath: string, authorName: string, authorEmail: string) {
     this.basePath = basePath;
 
     if (!existsSync(basePath)) {
@@ -21,6 +31,8 @@ export class GitOps {
 
     this.repo = git(basePath);
     this.repo.silent(true);
+
+    setAuthorInfo(this.repo, authorName, authorEmail);
   }
 
   public async cloneOrUpdate(repoUrl: string, branchName: string): Promise<void> {

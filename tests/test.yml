@@ -1,3 +1,7 @@
+bot:
+  name: Vita Bot
+  email: vita-bot@stefan-marr.de
+
 update-submodule:
   # basic module rebasing tests
   basic-without-conflicts:

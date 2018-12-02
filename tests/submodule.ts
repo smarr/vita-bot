@@ -7,8 +7,8 @@ import { expect } from "chai";
 
 import { Repository } from "../src/repository";
 
-const configuration: { [key: string]: UpdateSubmodule } = loadTestConfig(
-  __dirname + "/../../tests/test.yml")["update-submodule"];
+const testConfig = loadTestConfig(__dirname + "/../../tests/test.yml");
+const configuration: { [key: string]: UpdateSubmodule } = testConfig["update-submodule"];
 
 describe("Update submodule, without touching main repo", function() {
   before(async function() {
@@ -18,7 +18,9 @@ describe("Update submodule, without touching main repo", function() {
   it("update submodule simply with a fast forward", async function() {
     const updateConfig: UpdateSubmodule = configuration["submodule-fast-forward"];
 
-    const repo = new GitOps(updateConfig.repo.url + "/" + updateConfig.submodule.path);
+    const repo = new GitOps(
+      updateConfig.repo.url + "/" + updateConfig.submodule.path,
+      testConfig.bot.name, testConfig.bot.email);
     await repo.ensureRemote("upstream", updateConfig.submodule.upstream.url);
     await repo.fetch("upstream", updateConfig.submodule.upstream.branch);
 
@@ -29,7 +31,9 @@ describe("Update submodule, without touching main repo", function() {
   it("update submodule with simple rebase", async function() {
     const updateConfig: UpdateSubmodule = configuration["submodule-without-conflict"];
 
-    const repo = new GitOps(updateConfig.repo.url + "/" + updateConfig.submodule.path);
+    const repo = new GitOps(
+      updateConfig.repo.url + "/" + updateConfig.submodule.path,
+      testConfig.bot.name, testConfig.bot.email);
     await repo.ensureRemote("upstream", updateConfig.submodule.upstream.url);
     await repo.fetch("upstream", updateConfig.submodule.upstream.branch);
 
@@ -42,7 +46,9 @@ describe("Update submodule, without touching main repo", function() {
   it("update submodule but fail with conflict", async function() {
     const updateConfig: UpdateSubmodule = configuration["submodule-with-conflict"];
 
-    const repo = new GitOps(updateConfig.repo.url + "/" + updateConfig.submodule.path);
+    const repo = new GitOps(
+      updateConfig.repo.url + "/" + updateConfig.submodule.path,
+      testConfig.bot.name, testConfig.bot.email);
     await repo.ensureRemote("upstream", updateConfig.submodule.upstream.url);
     await repo.fetch("upstream", updateConfig.submodule.upstream.branch);
 
@@ -59,7 +65,9 @@ describe("Update submodule and update main repo", function() {
   it("update submodule simply with a fast forward", async function() {
     ensureRepoDoesNotExist(REPO_BASE + "/fast-forward");
 
-    const repo = new Repository(REPO_BASE + "/fast-forward", configuration["submodule-fast-forward"]);
+    const repo = new Repository(
+      REPO_BASE + "/fast-forward", configuration["submodule-fast-forward"],
+      testConfig.bot);
     await repo.cloneOrUpdate();
     const result = await repo.updateSubmodule();
     expect(result.success).to.be.true;

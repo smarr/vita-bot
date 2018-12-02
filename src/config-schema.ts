@@ -3,11 +3,21 @@
  */
 export interface Configuration {
   github: GitHub;
+  bot: BotDetails;
   "update-submodule": { [key: string]: UpdateSubmodule };
 }
 
 export interface GitHub {
   user: string;
+}
+
+/** Details to identify the bot, for instance in Git commits. */
+export interface BotDetails {
+  /** Used as author and committer name for git. */
+  name: string;
+
+  /** Used as author and committer email for git. */
+  email: string;
 }
 
 /** Defines a task to update the submodule of the given git repository. */

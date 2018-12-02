@@ -1,5 +1,5 @@
 import { GitOps } from "./git-ops";
-import { UpdateSubmodule } from "./config-schema";
+import { UpdateSubmodule, BotDetails } from "./config-schema";
 
 const BOT_UPSTREAM_REMOTE = "vita-bot-upstream";
 const ORIGIN_REMOTE = "origin";
@@ -15,13 +15,15 @@ export class Repository {
   private subRepo?: GitOps;
 
   private readonly config: UpdateSubmodule;
+  private readonly bot: BotDetails;
   private readonly basePath: string;
 
-  constructor(basePath: string, config: UpdateSubmodule) {
+  constructor(basePath: string, config: UpdateSubmodule, bot: BotDetails) {
     this.basePath = basePath;
     this.config = config;
+    this.bot = bot;
 
-    this.repo = new GitOps(basePath);
+    this.repo = new GitOps(basePath, bot.name, bot.email);
     this.subRepo = undefined;
 
     this.validateConfig();
@@ -47,7 +49,9 @@ export class Repository {
     await this.repo.submoduleUpdate(this.config.submodule.path);
 
     if (this.subRepo === undefined) {
-      this.subRepo = new GitOps(this.basePath + "/" + this.config.submodule.path);
+      this.subRepo = new GitOps(
+        this.basePath + "/" + this.config.submodule.path,
+        this.bot.name, this.bot.email);
     }
 
     const upstream = this.config.submodule.upstream;
