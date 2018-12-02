@@ -81,6 +81,10 @@ describe("Update submodule and update main repo", function() {
 
     expect(result.heads.afterUpdate.author_name).to.equal(testConfig.bot.name);
     expect(result.heads.afterUpdate.author_email).to.equal(testConfig.bot.email);
+
+    const cmt = await repo.commitSubmodule(result);
+    expect(cmt.summary.changes).to.equal("1");
+    expect(cmt.summary.insertions).to.equal("1");
   });
 
   it("update submodule with conflict", async function() {
@@ -101,11 +105,10 @@ describe("Update submodule and update main repo", function() {
     expect(result.heads.upstream.author_email).to.equal(testConfig.bot.email);
 
     expect(result.heads.beforeUpdate.hash).to.equal(result.heads.afterUpdate.hash);
-
   });
 
   it("update submodule without conflict", async function() {
-    ensureRepoDoesNotExist(REPO_BASE + "/with-conflict");
+    ensureRepoDoesNotExist(REPO_BASE + "/without-conflict");
 
     const repo = new Repository(
       REPO_BASE + "/without-conflict", configuration["submodule-without-conflict"],

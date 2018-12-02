@@ -100,7 +100,35 @@ export class Repository {
     });
   }
 
-  protected async rebaseSubmoduleOnUpstream(): Promise<{ success: boolean, msg: string, conflicts?: string[] }> {
-    throw new Error("Not yet implemented");
+  public async commitSubmodule(update: SubmoduleUpdateResult) {
+    console.assert(update.success === true);
+
+    const prevDate = update.heads.beforeUpdate.date;
+    const upstreamDate = update.heads.upstream.date;
+    return this.createSubmoduleCommit(prevDate, upstreamDate, update.fastForward);
+  }
+
+  protected async createSubmoduleCommit(prevDate: string, upstreamDate: string, fastForward: boolean) {
+    if (!this.subRepo) {
+      throw new Error("commitSubmodule() used before updateSubmodule().");
+    }
+
+    const name = this.config.submodule.path;
+
+    let msg = `Update submodule ${name}
+
+Previous version from: ${prevDate}
+Current version from:  ${upstreamDate}
+
+Updated based on: ${this.config.submodule.upstream.url}
+Using branch:     ${this.config.submodule.upstream.branch}`;
+
+    if (fastForward) {
+      msg += "\n\nThis update was a simple fast-forward.";
+    } else {
+      msg += "\n\nThis update was a rebase without conflicts.";
+    }
+
+    return this.repo.commit(this.config.submodule.path, msg);
   }
 }

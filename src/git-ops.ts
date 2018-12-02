@@ -154,9 +154,9 @@ export class GitOps {
   }
 
   public async getHead(): Promise<DefaultLogFields>;
-  public async getHead(remoteName: string, branch: string): Promise<DefaultLogFields>
+  public async getHead(remoteName: string, branch: string): Promise<DefaultLogFields>;
   public async getHead(remoteName?: string, branch?: string): Promise<DefaultLogFields> {
-    const options: any = {n: 1};
+    const options: any = { n: 1 };
     if (remoteName !== undefined && branch !== undefined) {
       options[remoteName + "/" + branch] = undefined;
     } else {
@@ -165,5 +165,10 @@ export class GitOps {
 
     const result = await this.repo.log(options);
     return Promise.resolve(result.latest);
+  }
+
+  public async commit(path: string, msg: string) {
+    await this.repo.add(path);
+    return this.repo.commit(msg);
   }
 }
