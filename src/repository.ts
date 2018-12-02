@@ -30,6 +30,8 @@ export class Repository {
   private readonly bot: BotDetails;
   private readonly basePath: string;
 
+  private updateResult?: SubmoduleUpdateResult;
+
   constructor(basePath: string, config: UpdateSubmodule, bot: BotDetails) {
     this.basePath = basePath;
     this.config = config;
@@ -37,6 +39,7 @@ export class Repository {
 
     this.repo = new GitOps(basePath, bot.name, bot.email);
     this.subRepo = undefined;
+    this.updateResult = undefined;
 
     this.validateConfig();
   }
@@ -88,7 +91,7 @@ export class Repository {
 
     const isFastForward = preMergeHead.hash === postRebaseHead.hash;
 
-    return Promise.resolve({
+    this.updateResult = {
       success: rebaseResult.success,
       rebase: rebaseResult,
       fastForward: isFastForward,
@@ -97,15 +100,23 @@ export class Repository {
         upstream: preMergeHead,
         afterUpdate: postRebaseHead
       }
-    });
+    };
+
+    return Promise.resolve(this.updateResult);
   }
 
-  public async commitSubmodule(update: SubmoduleUpdateResult) {
-    console.assert(update.success === true);
+  public async commitSubmodule() {
+    if (this.updateResult === undefined) {
+      throw new Error("commitSubmodule() used before updateSubmodule().");
+    }
 
-    const prevDate = update.heads.beforeUpdate.date;
-    const upstreamDate = update.heads.upstream.date;
-    return this.createSubmoduleCommit(prevDate, upstreamDate, update.fastForward);
+    if (this.updateResult.success === false) {
+      throw new Error("commitSubmodule() should only be used when update was successful.");
+    }
+
+    const prevDate = this.updateResult.heads.beforeUpdate.date;
+    const upstreamDate = this.updateResult.heads.upstream.date;
+    return this.createSubmoduleCommit(prevDate, upstreamDate, this.updateResult.fastForward);
   }
 
   protected async createSubmoduleCommit(prevDate: string, upstreamDate: string, fastForward: boolean) {

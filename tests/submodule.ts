@@ -77,7 +77,7 @@ describe("Update submodule and update main repo", function() {
     expectAuthorInfo(result.heads.upstream, testConfig.bot);
     expectAuthorInfo(result.heads.afterUpdate, testConfig.bot);
 
-    const cmt = await repo.commitSubmodule(result);
+    const cmt = await repo.commitSubmodule();
     expect(cmt.summary.changes).to.equal("1");
     expect(cmt.summary.insertions).to.equal("1");
   });
@@ -116,6 +116,10 @@ describe("Update submodule and update main repo", function() {
 
     expect(result.heads.afterUpdate.hash).to.not.equal(result.heads.beforeUpdate.hash);
     expect(result.heads.afterUpdate.hash).to.not.equal(result.heads.upstream.hash);
+
+    const cmt = await repo.commitSubmodule();
+    expect(cmt.summary.changes).to.equal("1");
+    expect(cmt.summary.insertions).to.equal("1");
   });
 });
 
