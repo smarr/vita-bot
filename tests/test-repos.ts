@@ -1,4 +1,4 @@
-import { Configuration } from "../src/config-schema";
+import { Configuration, BotDetails } from "../src/config-schema";
 
 import { expect } from "chai";
 import { writeFileSync, existsSync, mkdirSync, readFileSync } from "fs";
@@ -9,6 +9,7 @@ import { normalize } from "path";
 
 import yaml from "js-yaml";
 import { setAuthorInfo } from "../src/git-ops";
+import { DefaultLogFields } from "simple-git/typings/response";
 
 export const REPO_BASE = normalize(`${__dirname}/../../.base`);
 
@@ -39,6 +40,11 @@ export function expectConflict(result: { success: boolean; msg: string; conflict
   expect(result.conflicts).to.be.an("array");
   expect(result.conflicts).to.include(FILE1);
   expect(result.conflicts).to.have.lengthOf(1);
+}
+
+export function expectAuthorInfo(commit: DefaultLogFields, bot: BotDetails) {
+  expect(commit.author_name).to.equal(bot.name);
+  expect(commit.author_email).to.equal(bot.email);
 }
 
 async function populateMainRepo() {

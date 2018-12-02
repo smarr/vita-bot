@@ -1,4 +1,4 @@
-import { expectConflict, REPO_BASE, loadTestConfig, ensureRepoWithSubmodules, ensureRepoDoesNotExist } from "./test-repos";
+import { expectConflict, REPO_BASE, loadTestConfig, ensureRepoWithSubmodules, ensureRepoDoesNotExist, expectAuthorInfo } from "./test-repos";
 
 import { GitOps } from "../src/git-ops";
 import { UpdateSubmodule } from "../src/config-schema";
@@ -73,14 +73,9 @@ describe("Update submodule and update main repo", function() {
     expect(result.success).to.be.true;
     expect(result.fastForward).to.be.true;
 
-    expect(result.heads.beforeUpdate.author_name).to.equal(testConfig.bot.name);
-    expect(result.heads.beforeUpdate.author_email).to.equal(testConfig.bot.email);
-
-    expect(result.heads.upstream.author_name).to.equal(testConfig.bot.name);
-    expect(result.heads.upstream.author_email).to.equal(testConfig.bot.email);
-
-    expect(result.heads.afterUpdate.author_name).to.equal(testConfig.bot.name);
-    expect(result.heads.afterUpdate.author_email).to.equal(testConfig.bot.email);
+    expectAuthorInfo(result.heads.beforeUpdate, testConfig.bot);
+    expectAuthorInfo(result.heads.upstream, testConfig.bot);
+    expectAuthorInfo(result.heads.afterUpdate, testConfig.bot);
 
     const cmt = await repo.commitSubmodule(result);
     expect(cmt.summary.changes).to.equal("1");
@@ -98,11 +93,8 @@ describe("Update submodule and update main repo", function() {
     expect(result.success).to.be.false;
     expect(result.fastForward).to.be.false;
 
-    expect(result.heads.beforeUpdate.author_name).to.equal(testConfig.bot.name);
-    expect(result.heads.beforeUpdate.author_email).to.equal(testConfig.bot.email);
-
-    expect(result.heads.upstream.author_name).to.equal(testConfig.bot.name);
-    expect(result.heads.upstream.author_email).to.equal(testConfig.bot.email);
+    expectAuthorInfo(result.heads.beforeUpdate, testConfig.bot);
+    expectAuthorInfo(result.heads.upstream, testConfig.bot);
 
     expect(result.heads.beforeUpdate.hash).to.equal(result.heads.afterUpdate.hash);
   });
@@ -118,14 +110,9 @@ describe("Update submodule and update main repo", function() {
     expect(result.success).to.be.true;
     expect(result.fastForward).to.be.false;
 
-    expect(result.heads.beforeUpdate.author_name).to.equal(testConfig.bot.name);
-    expect(result.heads.beforeUpdate.author_email).to.equal(testConfig.bot.email);
-
-    expect(result.heads.upstream.author_name).to.equal(testConfig.bot.name);
-    expect(result.heads.upstream.author_email).to.equal(testConfig.bot.email);
-
-    expect(result.heads.afterUpdate.author_name).to.equal(testConfig.bot.name);
-    expect(result.heads.afterUpdate.author_email).to.equal(testConfig.bot.email);
+    expectAuthorInfo(result.heads.beforeUpdate, testConfig.bot);
+    expectAuthorInfo(result.heads.upstream, testConfig.bot);
+    expectAuthorInfo(result.heads.afterUpdate, testConfig.bot);
 
     expect(result.heads.afterUpdate.hash).to.not.equal(result.heads.beforeUpdate.hash);
     expect(result.heads.afterUpdate.hash).to.not.equal(result.heads.upstream.hash);
