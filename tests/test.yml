@@ -1,63 +1,69 @@
+## These are config snippets external to repositories to simplify testing
+## Each entry corresponds to a test.
+## These configurations contain the update tasks `update-submodule` and
+## `update-branches`.
+## They also name the test-repo, which is normally implicit from the
+
 bot:
   name: Vita Bot
   email: vita-bot@stefan-marr.de
 
-update-submodule:
-  # basic module rebasing tests
-  basic-without-conflicts:
-    submodule:
-      repo:
-        url: ../downstream  # the ../ are needed to access the top-level test folders
-        branch: partial
-      upstream:
-        url: ../upstream  # the ../ are needed to access the top-level test folders
-        branch: extended
+## Update Submodule
 
-  basic-with-conflicts:
-    submodule:
-      repo:
-        url: ../downstream  # the ../ are needed to access the top-level test folders
-        branch: replaced
-      upstream:
-        url: ../upstream  # the ../ are needed to access the top-level test folders
-        branch: extended
+update-submodule.update-available:
+  test-repo:
+    url: $BASE$/with-submodule
+    branch: master
+  update-submodules:
+    has-update:
+      branch: extended
 
-  # changes with conflicting file
-  submodule-with-conflict:
-    repo:
-      url:  $BASE$/with-submodule
-      branch: master
-    submodule:
-      repo:
-        url: $BASE$/upstream
-        branch: replaced
-      path: with-conflict
-      upstream:
-        url: $BASE$/upstream
-        branch: extended
-  # changes that have a conflict
-  submodule-without-conflict:
-    repo:
-      url:  $BASE$/with-submodule
-      branch: master
-    submodule:
-      repo:
-        url: $BASE$/upstream
-        branch: partial
-      path: without-conflict
-      upstream:
-        url: $BASE$/upstream
-        branch: extended
-  # simple fast-forward
-  submodule-fast-forward:
-    repo:
-      url:  $BASE$/with-submodule
-      branch: master
-    submodule:
-      repo:
-        url: $BASE$/upstream
-        branch: root-master
-      path: fast-forward
-      upstream:
-        url: $BASE$/upstream
-        branch: extended
+update-submodule.update-unavailable:
+  test-repo:
+    url: $BASE$/with-submodule
+    branch: master
+  update-submodules:
+    has-update:
+      branch: root-master
+
+update-submodule.update-conflicting:
+  test-repo:
+    url: $BASE$/with-submodule
+    branch: master
+  update-submodules:
+    has-conflict:
+      branch: extended
+
+
+## Update Branches
+
+update-branches.with-conflicts:
+  test-repo:
+    url: $BASE$/upstream
+  update-branches:
+    replaced:
+      url: $BASE$/upstream
+      branch: extended
+
+update-branches.without-conflicts:
+  test-repo:
+    url: $BASE$/upstream
+  update-branches:
+    partial:
+      url: $BASE$/upstream
+      branch: extended
+
+update-branches.fast-forward:
+  test-repo:
+    url: $BASE$/upstream
+  update-branches:
+    root-master:
+      url: $BASE$/upstream
+      branch: extended
+
+update-branches.blacklisted:
+  test-repo:
+    url: $BASE$/downstream
+  update-branches:
+    black*:
+      no-automatic-updates: true

@@ -1,20 +1,19 @@
 import {
   GIT_MAIN_REPO, BRANCH_NO_CONFLICT, BRANCH_UPSTREAM, BRANCH_CONFLICT,
-  GIT_DOWNSTREAM_REPO, REPO_BASE, expectConflict, ensureMainRepo, ensureDownstreamRepo
+  GIT_DOWNSTREAM_REPO, REPO_BASE, expectConflict, ensureMainRepo, ensureDownstreamRepo, BRANCH_ROOT, loadTestConfig
 } from "./test-repos";
 
-import { Configuration, Submodule } from "../src/config-schema";
 import { GitOps } from "../src/git-ops";
 
 import { expect } from "chai";
-import { readFileSync, existsSync } from "fs";
-import yaml from "js-yaml";
+import { existsSync } from "fs";
 import rimraf = require("rimraf");
+import { UpdateBranchConfig } from "../src/config-schema";
+import { UpdateBranch } from "../src/update-ops";
 
-const config: Configuration = yaml.safeLoad(
-  readFileSync(__dirname + "/../../tests/test.yml", "utf-8"));
+const config = loadTestConfig(__dirname + "/../../tests/test.yml");
 
-describe("Rebase Branch Automatically", function() {
+describe("Update Branches Automatically, possibly requiring rebase", function() {
   before(async function() {
     await ensureMainRepo();
     await ensureDownstreamRepo();
@@ -33,53 +32,66 @@ describe("Rebase Branch Automatically", function() {
     expectConflict(result);
   });
 
-  describe("Remote upstream repo", function() {
-    it("fetch upstream branch and try rebase", async function() {
-      const repo = new GitOps(GIT_DOWNSTREAM_REPO, config.bot.name, config.bot.email);
+  it("fetch upstream branch and try rebase", async function() {
+    const repo = new GitOps(GIT_DOWNSTREAM_REPO, config.bot.name, config.bot.email);
 
-      await repo.fetch(GIT_MAIN_REPO);
-      const result = await repo.rebase(BRANCH_CONFLICT, "origin/" + BRANCH_UPSTREAM);
+    await repo.fetch(GIT_MAIN_REPO);
+    const result = await repo.rebase(BRANCH_CONFLICT, "origin/" + BRANCH_UPSTREAM);
 
-      expectConflict(result);
-    });
+    expectConflict(result);
   });
 });
 
 describe("Rebase based on test.yml", function() {
-  let withoutConflicts: Submodule;
-  let withConflicts: Submodule;
-
-  before(async function() {
-    withoutConflicts = config["update-submodule"]["basic-without-conflicts"].submodule;
-    withConflicts = config["update-submodule"]["basic-with-conflicts"].submodule;
-  });
+  const withoutConflicts = config["update-branches.without-conflicts"];
+  const withConflicts = config["update-branches.with-conflicts"];
+  const fastForward = config["update-branches.fast-forward"];
 
   it("rebase without conflicts", async function() {
-    if (existsSync(REPO_BASE + "/without-conflicts")) {
-      rimraf.sync(REPO_BASE + "/without-conflicts");
+    const repoPath = REPO_BASE + "/without-conflicts";
+    if (existsSync(repoPath)) {
+      rimraf.sync(repoPath);
     }
 
-    const repo = new GitOps(REPO_BASE + "/without-conflicts", config.bot.name, config.bot.email);
-    await repo.cloneOrUpdate(withoutConflicts.repo.url, withoutConflicts.repo.branch);
-    await repo.ensureRemote("upstream", withoutConflicts.upstream.url);
-    await repo.fetch("upstream", withoutConflicts.upstream.branch);
-    const result = await repo.rebase(withoutConflicts.repo.branch, "upstream/" + withoutConflicts.upstream.branch);
+    const upstreamDetails: UpdateBranchConfig = withoutConflicts["update-branches"][BRANCH_NO_CONFLICT];
+    const updater = new UpdateBranch(
+      withoutConflicts["test-repo"].url, BRANCH_NO_CONFLICT,
+      repoPath, upstreamDetails, config.bot);
+    const result = await updater.performUpdate();
 
     expect(result.success).to.be.true;
-    expect(result.conflicts).to.be.undefined;
+    expect(result.rebase.conflicts).to.be.undefined;
   });
 
   it("rebase with conflicts", async function() {
-    if (existsSync(REPO_BASE + "/with-conflicts")) {
-      rimraf.sync(REPO_BASE + "/with-conflicts");
+    const repoPath = REPO_BASE + "/with-conflicts";
+    if (existsSync(repoPath)) {
+      rimraf.sync(repoPath);
     }
 
-    const repo = new GitOps(REPO_BASE + "/with-conflicts", config.bot.name, config.bot.email);
-    await repo.cloneOrUpdate(withConflicts.repo.url, withConflicts.repo.branch);
-    await repo.ensureRemote("upstream", withConflicts.upstream.url);
-    await repo.fetch("upstream", withConflicts.upstream.branch);
-    const result = await repo.rebase(withConflicts.repo.branch, "upstream/" + withConflicts.upstream.branch);
+    const upstreamDetails: UpdateBranchConfig = withConflicts["update-branches"][BRANCH_CONFLICT];
+    const updater = new UpdateBranch(
+      withConflicts["test-repo"].url, BRANCH_CONFLICT,
+      repoPath, upstreamDetails, config.bot);
+    const result = await updater.performUpdate();
 
-    expectConflict(result);
+    expectConflict(result.rebase);
+  });
+
+  it("fast forward", async function() {
+    const repoPath = REPO_BASE + "/fast-forward";
+    if (existsSync(repoPath)) {
+      rimraf.sync(repoPath);
+    }
+
+    const upstreamDetails: UpdateBranchConfig = fastForward["update-branches"][BRANCH_ROOT];
+
+    const updater = new UpdateBranch(
+      fastForward["test-repo"].url, BRANCH_ROOT,
+      repoPath, upstreamDetails, config.bot);
+    const result = await updater.performUpdate();
+
+    expect(result.success).to.be.true;
+    expect(result.rebase.conflicts).to.be.undefined;
   });
 });

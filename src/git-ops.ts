@@ -50,6 +50,13 @@ export class GitOps {
     setAuthorInfo(this.repo, authorName, authorEmail);
   }
 
+  /**
+   * If necessary, it creates the repository be cloning, otherwise it ensures
+   * that the repo is up-to-date.
+   *
+   * @param repoUrl the URL to clone the repo from, if necessary
+   * @param branchName the branch to work on
+   */
   public async cloneOrUpdate(repoUrl: string, branchName: string): Promise<void> {
     if (!(await this.isValidRepository())) {
       await this.clone(repoUrl, branchName);
@@ -61,6 +68,15 @@ export class GitOps {
 
   public async fetch(remoteName: string, branch?: string) {
     return this.repo.fetch(remoteName, branch);
+  }
+
+  public async fastForward(remoteName: string, branch?: string) {
+    return this.repo.pull(remoteName, branch, { "--ff-only": null });
+  }
+
+  public async forceUpdate(remoteName: string, branch: string) {
+    await this.repo.fetch(remoteName, branch);
+    await this.repo.reset([remoteName + "/" + branch, "--hard"]);
   }
 
   public async isValidRepository(): Promise<boolean> {
@@ -154,11 +170,15 @@ export class GitOps {
   }
 
   public async getHead(): Promise<DefaultLogFields>;
+  public async getHead(branch: string): Promise<DefaultLogFields>;
   public async getHead(remoteName: string, branch: string): Promise<DefaultLogFields>;
   public async getHead(remoteName?: string, branch?: string): Promise<DefaultLogFields> {
     const options: any = { n: 1 };
     if (remoteName !== undefined && branch !== undefined) {
       options[remoteName + "/" + branch] = undefined;
+    } else if (remoteName !== undefined && branch === undefined) {
+      // this case corresponds to the signature with just the branch
+      options[remoteName] = undefined;
     } else {
       options["."] = undefined;
     }

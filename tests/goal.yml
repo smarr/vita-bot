@@ -1,20 +1,33 @@
-github:
-  user: vita-bot
+SOMns:
+  update-submodules:
+    libs/truffle:
+      branch: debugger/master
+    libs/black-diamonds:
+      branch: master
+    libs/mx:
+      branch: master
 
-update-submodule:
-  SOMns:
-    repo:
-      url: https://github.com/smarr/SOMns.git
-      branch: dev
-    submodule:
-      path: libs/truffle
-      # tags are used to mark accepted versions to keep them available in the repo
+mx:
+  update-branches:
+    master:
+      url: https://github.com/graalvm/mx.git
+      branch: master
+      fast-forward: push
+    tar-compile-poc:
+      url: https://github.com/graalvm/mx.git
+      branch: master
+      tags: tar-poc/%YYYY-%MM-%DD
+
+truffle:
+  update-branches:
+    debugger/master:
+      url: https://github.com/oracle/graal.git
+      branch: master
       tags: downstream/debugger-%YYYY-%MM-%DD
-      repo:
-        url: https://github.com/smarr/truffle.git
-        branch: debugger/master
-      upstream:
-        url: https://github.com/oracle/graal.git
-        branch: master
+    upstream/master:
+      url: https://github.com/oracle/graal.git
+      branch: master
+      fast-forward: push
+
 
 

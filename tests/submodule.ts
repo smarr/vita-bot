@@ -1,125 +1,63 @@
-import { expectConflict, REPO_BASE, loadTestConfig, ensureRepoWithSubmodules, ensureRepoDoesNotExist, expectAuthorInfo } from "./test-repos";
-
-import { GitOps } from "../src/git-ops";
-import { UpdateSubmodule } from "../src/config-schema";
+import { REPO_BASE, loadTestConfig, ensureRepoWithSubmodules, SUBMODULE_UPDATE, SUBMODULE_CONFLICT } from "./test-repos";
 
 import { expect } from "chai";
-
-import { Repository } from "../src/repository";
+import { UpdateSubmodule } from "../src/update-ops";
+import { existsSync } from "fs";
+import rimraf = require("rimraf");
 
 const testConfig = loadTestConfig(__dirname + "/../../tests/test.yml");
-const configuration: { [key: string]: UpdateSubmodule } = testConfig["update-submodule"];
+const updateAvailable = testConfig["update-submodule.update-available"];
+const updateUnavailable = testConfig["update-submodule.update-unavailable"];
+const updateConflicting = testConfig["update-submodule.update-conflicting"];
 
-describe("Update submodule, without touching main repo", function() {
+describe("Update submodule", function() {
   before(async function() {
     await ensureRepoWithSubmodules();
   });
 
   it("update submodule simply with a fast forward", async function() {
-    const updateConfig: UpdateSubmodule = configuration["submodule-fast-forward"];
+    const repoPath = REPO_BASE + "/submodule-fast-forward";
+    if (existsSync(repoPath)) {
+      rimraf.sync(repoPath);
+    }
 
-    const repo = new GitOps(
-      updateConfig.repo.url + "/" + updateConfig.submodule.path,
-      testConfig.bot.name, testConfig.bot.email);
-    await repo.ensureRemote("upstream", updateConfig.submodule.upstream.url);
-    await repo.fetch("upstream", updateConfig.submodule.upstream.branch);
+    const update = new UpdateSubmodule(updateAvailable["test-repo"].url, "master",
+      repoPath, SUBMODULE_UPDATE,
+      updateAvailable["update-submodules"][SUBMODULE_UPDATE], testConfig.bot);
+    const result = await update.performUpdate();
 
-    const result = await repo.rebase(updateConfig.submodule.repo.branch, "upstream/" + updateConfig.submodule.upstream.branch);
     expect(result.success).to.be.true;
+    expect(result.forced).to.be.false;
   });
 
-  it("update submodule with simple rebase", async function() {
-    const updateConfig: UpdateSubmodule = configuration["submodule-without-conflict"];
+  it("update submodule, no update available", async function() {
+    const repoPath = REPO_BASE + "/submodule-no-update";
+    if (existsSync(repoPath)) {
+      rimraf.sync(repoPath);
+    }
 
-    const repo = new GitOps(
-      updateConfig.repo.url + "/" + updateConfig.submodule.path,
-      testConfig.bot.name, testConfig.bot.email);
-    await repo.ensureRemote("upstream", updateConfig.submodule.upstream.url);
-    await repo.fetch("upstream", updateConfig.submodule.upstream.branch);
+    const update = new UpdateSubmodule(updateUnavailable["test-repo"].url, "master",
+      repoPath, SUBMODULE_UPDATE,
+      updateUnavailable["update-submodules"][SUBMODULE_UPDATE], testConfig.bot);
+    const result = await update.performUpdate();
 
-    const result = await repo.rebase(updateConfig.submodule.repo.branch, "upstream/" + updateConfig.submodule.upstream.branch);
-    expect(result.success).to.be.true;
-  });
-
-  // TODO: do I need to be able to distinguish fast-forward from rebase?
-  //       I think so, because it implies whether I need to create tags, and stuff
-  it("update submodule but fail with conflict", async function() {
-    const updateConfig: UpdateSubmodule = configuration["submodule-with-conflict"];
-
-    const repo = new GitOps(
-      updateConfig.repo.url + "/" + updateConfig.submodule.path,
-      testConfig.bot.name, testConfig.bot.email);
-    await repo.ensureRemote("upstream", updateConfig.submodule.upstream.url);
-    await repo.fetch("upstream", updateConfig.submodule.upstream.branch);
-
-    const result = await repo.rebase(updateConfig.submodule.repo.branch, "upstream/" + updateConfig.submodule.upstream.branch);
-    expectConflict(result);
-  });
-});
-
-describe("Update submodule and update main repo", function() {
-  before(async function() {
-    await ensureRepoWithSubmodules();
-  });
-
-  it("update submodule simply with a fast forward", async function() {
-    ensureRepoDoesNotExist(REPO_BASE + "/fast-forward");
-
-    const repo = new Repository(
-      REPO_BASE + "/fast-forward", configuration["submodule-fast-forward"],
-      testConfig.bot);
-    await repo.cloneOrUpdate();
-    const result = await repo.updateSubmodule();
-    expect(result.success).to.be.true;
-    expect(result.fastForward).to.be.true;
-
-    expectAuthorInfo(result.heads.beforeUpdate, testConfig.bot);
-    expectAuthorInfo(result.heads.upstream, testConfig.bot);
-    expectAuthorInfo(result.heads.afterUpdate, testConfig.bot);
-
-    const cmt = await repo.commitSubmodule();
-    expect(cmt.summary.changes).to.equal("1");
-    expect(cmt.summary.insertions).to.equal("1");
-  });
-
-  it("update submodule with conflict", async function() {
-    ensureRepoDoesNotExist(REPO_BASE + "/with-conflict");
-
-    const repo = new Repository(
-      REPO_BASE + "/with-conflict", configuration["submodule-with-conflict"],
-      testConfig.bot);
-    await repo.cloneOrUpdate();
-    const result = await repo.updateSubmodule();
     expect(result.success).to.be.false;
-    expect(result.fastForward).to.be.false;
-
-    expectAuthorInfo(result.heads.beforeUpdate, testConfig.bot);
-    expectAuthorInfo(result.heads.upstream, testConfig.bot);
-
-    expect(result.heads.beforeUpdate.hash).to.equal(result.heads.afterUpdate.hash);
+    expect(result.forced).to.be.false;
   });
 
-  it("update submodule without conflict", async function() {
-    ensureRepoDoesNotExist(REPO_BASE + "/without-conflict");
+  it("update submodule, update conflicting", async function() {
+    const repoPath = REPO_BASE + "/submodule-conflict";
+    if (existsSync(repoPath)) {
+      rimraf.sync(repoPath);
+    }
 
-    const repo = new Repository(
-      REPO_BASE + "/without-conflict", configuration["submodule-without-conflict"],
-      testConfig.bot);
-    await repo.cloneOrUpdate();
-    const result = await repo.updateSubmodule();
-    expect(result.success).to.be.true;
-    expect(result.fastForward).to.be.false;
+    const update = new UpdateSubmodule(updateConflicting["test-repo"].url, "master",
+      repoPath, SUBMODULE_CONFLICT,
+      updateConflicting["update-submodules"][SUBMODULE_CONFLICT], testConfig.bot);
+    const result = await update.performUpdate();
 
-    expectAuthorInfo(result.heads.beforeUpdate, testConfig.bot);
-    expectAuthorInfo(result.heads.upstream, testConfig.bot);
-    expectAuthorInfo(result.heads.afterUpdate, testConfig.bot);
-
-    expect(result.heads.afterUpdate.hash).to.not.equal(result.heads.beforeUpdate.hash);
-    expect(result.heads.afterUpdate.hash).to.not.equal(result.heads.upstream.hash);
-
-    const cmt = await repo.commitSubmodule();
-    expect(cmt.summary.changes).to.equal("1");
-    expect(cmt.summary.insertions).to.equal("1");
+    expect(result.success, "Despite conflict, expect update to succeed").to.be.true;
+    expect(result.forced, "Update was forced").to.be.true;
   });
 });
 

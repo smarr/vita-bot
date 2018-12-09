@@ -27,7 +27,10 @@ export const BRANCH_NO_CONFLICT = "partial";
 export const BRANCH_UPSTREAM = "extended";
 export const BRANCH_ROOT = "root-master";
 
-export function loadTestConfig(path: string): Configuration {
+export const SUBMODULE_UPDATE = "has-update";
+export const SUBMODULE_CONFLICT = "has-conflict";
+
+export function loadTestConfig(path: string) {
   const content = readFileSync(path, { encoding: "utf-8" });
 
   const re = new RegExp(/\$BASE\$/g);
@@ -133,9 +136,8 @@ async function populateRepoWithSubmodules() {
   writeFileSync(FILE1, TEST_TEXT);
   await repo.add(FILE1);
   await repo.commit("Initial Commit");
-  await repo.subModule(["add", "-b", BRANCH_CONFLICT, GIT_MAIN_REPO, "with-conflict"]);
-  await repo.subModule(["add", "-b", BRANCH_NO_CONFLICT, GIT_MAIN_REPO, "without-conflict"]);
-  await repo.subModule(["add", "-b", BRANCH_ROOT, GIT_MAIN_REPO, "fast-forward"]);
+  await repo.subModule(["add", "-b", BRANCH_CONFLICT, GIT_MAIN_REPO, "has-conflict"]);
+  await repo.subModule(["add", "-b", BRANCH_ROOT, GIT_MAIN_REPO, "has-update"]);
   await repo.commit("Added submodules");
 }
 
