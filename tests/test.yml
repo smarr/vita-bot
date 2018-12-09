@@ -4,10 +4,6 @@
 ## `update-branches`.
 ## They also name the test-repo, which is normally implicit from the
 
-bot:
-  name: Vita Bot
-  email: vita-bot@stefan-marr.de
-
 ## Update Submodule
 
 update-submodule.update-available:

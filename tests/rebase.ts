@@ -3,6 +3,7 @@ import {
   GIT_DOWNSTREAM_REPO, REPO_BASE, expectConflict, ensureMainRepo, ensureDownstreamRepo, BRANCH_ROOT, loadTestConfig
 } from "./test-repos";
 
+import { bot } from "../src/config";
 import { GitOps } from "../src/git-ops";
 
 import { expect } from "chai";
@@ -20,20 +21,20 @@ describe("Update Branches Automatically, possibly requiring rebase", function() 
   });
 
   it("branch without conflicts", async function() {
-    const repo = new GitOps(GIT_MAIN_REPO, config.bot.name, config.bot.email);
+    const repo = new GitOps(GIT_MAIN_REPO, bot.name, bot.email);
     const result = await repo.rebase(BRANCH_NO_CONFLICT, BRANCH_UPSTREAM);
     expect(result.success).to.be.true;
   });
 
   it("branch with conflicts", async function() {
-    const repo = new GitOps(GIT_MAIN_REPO, config.bot.name, config.bot.email);
+    const repo = new GitOps(GIT_MAIN_REPO, bot.name, bot.email);
     const result = await repo.rebase(BRANCH_CONFLICT, BRANCH_UPSTREAM);
 
     expectConflict(result);
   });
 
   it("fetch upstream branch and try rebase", async function() {
-    const repo = new GitOps(GIT_DOWNSTREAM_REPO, config.bot.name, config.bot.email);
+    const repo = new GitOps(GIT_DOWNSTREAM_REPO, bot.name, bot.email);
 
     await repo.fetch(GIT_MAIN_REPO);
     const result = await repo.rebase(BRANCH_CONFLICT, "origin/" + BRANCH_UPSTREAM);
@@ -56,7 +57,7 @@ describe("Rebase based on test.yml", function() {
     const upstreamDetails: UpdateBranchConfig = withoutConflicts["update-branches"][BRANCH_NO_CONFLICT];
     const updater = new UpdateBranch(
       withoutConflicts["test-repo"].url, BRANCH_NO_CONFLICT,
-      repoPath, upstreamDetails, config.bot);
+      repoPath, upstreamDetails, bot);
     const result = await updater.performUpdate();
 
     expect(result.success).to.be.true;
@@ -72,7 +73,7 @@ describe("Rebase based on test.yml", function() {
     const upstreamDetails: UpdateBranchConfig = withConflicts["update-branches"][BRANCH_CONFLICT];
     const updater = new UpdateBranch(
       withConflicts["test-repo"].url, BRANCH_CONFLICT,
-      repoPath, upstreamDetails, config.bot);
+      repoPath, upstreamDetails, bot);
     const result = await updater.performUpdate();
 
     expectConflict(result.rebase);
@@ -88,7 +89,7 @@ describe("Rebase based on test.yml", function() {
 
     const updater = new UpdateBranch(
       fastForward["test-repo"].url, BRANCH_ROOT,
-      repoPath, upstreamDetails, config.bot);
+      repoPath, upstreamDetails, bot);
     const result = await updater.performUpdate();
 
     expect(result.success).to.be.true;

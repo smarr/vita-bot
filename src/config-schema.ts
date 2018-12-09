@@ -6,12 +6,14 @@ export interface Configuration {
 }
 
 export interface BotConfig {
-  bot: BotDetails;
   "update-branches": { [branchPattern: string]: UpdateBranchConfig };
   "update-submodules": { [submodulePath: string]: UpdateSubmoduleConfig };
 }
 
-/** Details to identify the bot, for instance in Git commits. */
+/**
+ * Details to identify the bot, for instance in Git commits.
+ * This data is stored in the package.json.
+ */
 export interface BotDetails {
   /** Used as author and committer name for git. */
   name: string;

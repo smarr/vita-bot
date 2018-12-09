@@ -1,7 +1,9 @@
+import { bot } from "../src/config";
+import { UpdateSubmodule } from "../src/update-ops";
+
 import { REPO_BASE, loadTestConfig, ensureRepoWithSubmodules, SUBMODULE_UPDATE, SUBMODULE_CONFLICT } from "./test-repos";
 
 import { expect } from "chai";
-import { UpdateSubmodule } from "../src/update-ops";
 import { existsSync } from "fs";
 import rimraf = require("rimraf");
 
@@ -23,7 +25,7 @@ describe("Update submodule", function() {
 
     const update = new UpdateSubmodule(updateAvailable["test-repo"].url, "master",
       repoPath, SUBMODULE_UPDATE,
-      updateAvailable["update-submodules"][SUBMODULE_UPDATE], testConfig.bot);
+      updateAvailable["update-submodules"][SUBMODULE_UPDATE], bot);
     const result = await update.performUpdate();
 
     expect(result.success).to.be.true;
@@ -38,7 +40,7 @@ describe("Update submodule", function() {
 
     const update = new UpdateSubmodule(updateUnavailable["test-repo"].url, "master",
       repoPath, SUBMODULE_UPDATE,
-      updateUnavailable["update-submodules"][SUBMODULE_UPDATE], testConfig.bot);
+      updateUnavailable["update-submodules"][SUBMODULE_UPDATE], bot);
     const result = await update.performUpdate();
 
     expect(result.success).to.be.false;
@@ -53,7 +55,7 @@ describe("Update submodule", function() {
 
     const update = new UpdateSubmodule(updateConflicting["test-repo"].url, "master",
       repoPath, SUBMODULE_CONFLICT,
-      updateConflicting["update-submodules"][SUBMODULE_CONFLICT], testConfig.bot);
+      updateConflicting["update-submodules"][SUBMODULE_CONFLICT], bot);
     const result = await update.performUpdate();
 
     expect(result.success, "Despite conflict, expect update to succeed").to.be.true;
