@@ -1,11 +1,9 @@
 import { bot } from "../src/config";
 import { UpdateSubmodule } from "../src/update-ops";
 
-import { REPO_BASE, loadTestConfig, ensureRepoWithSubmodules, SUBMODULE_UPDATE, SUBMODULE_CONFLICT } from "./test-repos";
+import { REPO_BASE, loadTestConfig, ensureRepoWithSubmodules, SUBMODULE_UPDATE, SUBMODULE_CONFLICT, ensureRepoDoesNotExist } from "./test-repos";
 
 import { expect } from "chai";
-import { existsSync } from "fs";
-import rimraf = require("rimraf");
 
 const testConfig = loadTestConfig(__dirname + "/../../tests/test.yml");
 const updateAvailable = testConfig["update-submodule.update-available"];
@@ -17,49 +15,65 @@ describe("Update submodule", function() {
     await ensureRepoWithSubmodules();
   });
 
-  it("update submodule simply with a fast forward", async function() {
-    const repoPath = REPO_BASE + "/submodule-fast-forward";
-    if (existsSync(repoPath)) {
-      rimraf.sync(repoPath);
-    }
+  describe("with a fast forward change", function() {
+    let update: UpdateSubmodule;
+    let repoPath: string;
 
-    const update = new UpdateSubmodule(updateAvailable["test-repo"].url, "master",
-      repoPath, SUBMODULE_UPDATE,
-      updateAvailable["update-submodules"][SUBMODULE_UPDATE], bot);
-    const result = await update.performUpdate();
+    before(function() {
+      repoPath = REPO_BASE + "/submodule-fast-forward";
+      ensureRepoDoesNotExist(repoPath);
 
-    expect(result.success).to.be.true;
-    expect(result.forced).to.be.false;
+      update = new UpdateSubmodule(updateAvailable["test-repo"].url, "master",
+        repoPath, SUBMODULE_UPDATE,
+        updateAvailable["update-submodules"][SUBMODULE_UPDATE], bot);
+    });
+
+    it("should succeed", async function() {
+      const result = await update.performUpdate();
+
+      expect(result.success).to.be.true;
+      expect(result.forced).to.be.false;
+    });
   });
 
-  it("update submodule, no update available", async function() {
-    const repoPath = REPO_BASE + "/submodule-no-update";
-    if (existsSync(repoPath)) {
-      rimraf.sync(repoPath);
-    }
+  describe("without update available", async function() {
+    let update: UpdateSubmodule;
 
-    const update = new UpdateSubmodule(updateUnavailable["test-repo"].url, "master",
-      repoPath, SUBMODULE_UPDATE,
-      updateUnavailable["update-submodules"][SUBMODULE_UPDATE], bot);
-    const result = await update.performUpdate();
+    before(function() {
+      const repoPath = REPO_BASE + "/submodule-no-update";
+      ensureRepoDoesNotExist(repoPath);
+      update = new UpdateSubmodule(updateUnavailable["test-repo"].url, "master",
+        repoPath, SUBMODULE_UPDATE,
+        updateUnavailable["update-submodules"][SUBMODULE_UPDATE], bot);
+    });
 
-    expect(result.success).to.be.false;
-    expect(result.forced).to.be.false;
+    it("should fail", async function() {
+      const result = await update.performUpdate();
+
+      expect(result.success).to.be.false;
+      expect(result.forced).to.be.false;
+    });
+
+
   });
 
-  it("update submodule, update conflicting", async function() {
-    const repoPath = REPO_BASE + "/submodule-conflict";
-    if (existsSync(repoPath)) {
-      rimraf.sync(repoPath);
-    }
+  describe("with a conflicting change", function() {
+    let update: UpdateSubmodule;
 
-    const update = new UpdateSubmodule(updateConflicting["test-repo"].url, "master",
-      repoPath, SUBMODULE_CONFLICT,
-      updateConflicting["update-submodules"][SUBMODULE_CONFLICT], bot);
-    const result = await update.performUpdate();
+    before(function() {
+      const repoPath = REPO_BASE + "/submodule-conflict";
+      ensureRepoDoesNotExist(repoPath);
+      update = new UpdateSubmodule(updateConflicting["test-repo"].url, "master",
+        repoPath, SUBMODULE_CONFLICT,
+        updateConflicting["update-submodules"][SUBMODULE_CONFLICT], bot);
+    });
 
-    expect(result.success, "Despite conflict, expect update to succeed").to.be.true;
-    expect(result.forced, "Update was forced").to.be.true;
+    it("should succeed and be forced", async function() {
+      const result = await update.performUpdate();
+
+      expect(result.success, "Despite conflict, expect update to succeed").to.be.true;
+      expect(result.forced, "Update was forced").to.be.true;
+    });
   });
 });
 
