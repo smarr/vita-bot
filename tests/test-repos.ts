@@ -1,10 +1,10 @@
-import { Configuration, BotDetails } from "../src/config-schema";
+import { BotDetails } from "../src/config-schema";
 
 import { expect } from "chai";
 import { writeFileSync, existsSync, mkdirSync, readFileSync } from "fs";
 import { chdir } from "process";
 import rimraf from "rimraf";
-import git from "simple-git/promise";
+import git, { SimpleGit } from "simple-git/promise";
 import { normalize } from "path";
 
 import yaml from "js-yaml";
@@ -30,6 +30,12 @@ export const BRANCH_ROOT = "root-master";
 export const SUBMODULE_UPDATE = "has-update";
 export const SUBMODULE_CONFLICT = "has-conflict";
 
+function makeTestGit(path?: string): SimpleGit {
+  const repo = git(path);
+  setAuthorInfo(repo, "Test Bot", "test@example.org");
+  return repo;
+}
+
 export function loadTestConfig(path: string) {
   const content = readFileSync(path, { encoding: "utf-8" });
 
@@ -51,8 +57,7 @@ export function expectAuthorInfo(commit: DefaultLogFields, bot: BotDetails) {
 }
 
 async function populateMainRepo() {
-  const repo = git();
-  setAuthorInfo(repo, "Vita Bot", "vita-bot@stefan-marr.de");
+  const repo = makeTestGit();
   await repo.init();
 
   writeFileSync(FILE1, TEST_TEXT);
@@ -120,9 +125,9 @@ export async function ensureDownstreamRepo() {
 
   ensureRepoDoesNotExist(GIT_DOWNSTREAM_REPO);
 
-  const repo = git();
+  const repo = makeTestGit();
   await repo.clone(GIT_MAIN_REPO, GIT_DOWNSTREAM_REPO, ["-b", BRANCH_CONFLICT]);
-  const downstream = git(GIT_DOWNSTREAM_REPO);
+  const downstream = makeTestGit(GIT_DOWNSTREAM_REPO);
   await downstream.fetch("origin", BRANCH_NO_CONFLICT);
   await downstream.branch([BRANCH_NO_CONFLICT, "origin/" + BRANCH_NO_CONFLICT]);
 
@@ -130,7 +135,7 @@ export async function ensureDownstreamRepo() {
 }
 
 async function populateRepoWithSubmodules() {
-  const repo = git();
+  const repo = makeTestGit();
   await repo.init();
 
   writeFileSync(FILE1, TEST_TEXT);
