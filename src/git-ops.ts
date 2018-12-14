@@ -191,4 +191,9 @@ export class GitOps {
     await this.repo.add(path);
     return this.repo.commit(msg);
   }
+
+  public async getSubmoduleUrl(submodulePath: string): Promise<string> {
+    const url = await this.repo.raw(["config", "--file=.gitmodules", "--get", "submodule." + submodulePath + ".url"]);
+    return Promise.resolve(url.trim());
+  }
 }

@@ -1,6 +1,7 @@
 import { UpdateBranchConfig, BotDetails, UpdateSubmoduleConfig } from "./config-schema";
 import { GitOps, RebaseResult } from "./git-ops";
 import { DefaultLogFields } from "simple-git/typings/response";
+import { CommitSummary } from "simple-git/promise";
 
 /** The standard git upstream remote name. */
 const UPSTREAM_REMOTE = "upstream";
@@ -102,7 +103,7 @@ export class UpdateSubmodule extends UpdateTask {
     this.subRepo = undefined;
   }
 
-  public async performUpdate(): Promise<UpdateSubmoduleResult> {
+  protected async updateSubmodule(): Promise<UpdateSubmoduleResult> {
     await this.ensureRepoIsAvailable();
     await this.repo.submoduleUpdate(this.submodulePath);
 
@@ -143,5 +144,41 @@ export class UpdateSubmodule extends UpdateTask {
     };
 
     return Promise.resolve(this.updateResult);
+  }
+
+  protected async commitUpdate(): Promise<CommitSummary> {
+    if (this.updateResult === undefined) {
+      throw new Error("commitUpdate() should only be called after successful update");
+    }
+
+    const prevDate = this.updateResult.heads.beforeUpdate.date;
+    const upstreamDate = this.updateResult.heads.afterUpdate.date;
+
+    const url = await this.repo.getSubmoduleUrl(this.submodulePath);
+
+    let msg = `Update submodule ${this.submodulePath}
+
+    Previous version from: ${prevDate}
+    Current version from:  ${upstreamDate}
+
+    Updated based on: ${url}
+    Using branch:     ${this.config.branch}\n`;
+
+    if (this.updateResult.forced) {
+      msg += "\n\nThis update conflicted with the previous version and was forced.\n";
+    }
+
+    return this.repo.commit(this.submodulePath, msg);
+  }
+
+  public async performUpdate(): Promise<UpdateSubmoduleResult> {
+    const result = this.updateSubmodule();
+    const r = await result;
+
+    if (r.success) {
+      await this.commitUpdate();
+    }
+
+    return result;
   }
 }
