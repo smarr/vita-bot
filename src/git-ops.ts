@@ -12,28 +12,28 @@ export function setAuthorInfo(repo: SimpleGit, authorName: string, authorEmail: 
 }
 
 export interface LogEntry {
-  commitHash:     string;
-  treeHash:       string;
-  parentHashes:   string;
+  commitHash: string;
+  treeHash: string;
+  parentHashes: string;
 
-  authorName:     string;
-  authorEmail:    string;
-  authorDate:     string;
+  authorName: string;
+  authorEmail: string;
+  authorDate: string;
 
-  committerName:  string;
+  committerName: string;
   committerEmail: string;
-  committerDate:  string;
+  committerDate: string;
 
   refNames: string;
   encoding: string;
-  subject:  string;
+  subject: string;
 
-  body:     string;
-  bodyRaw:  string;
+  body: string;
+  bodyRaw: string;
   commitNotes: string;
   verificationFlag: string;
 
-  signer:    string;
+  signer: string;
   signerKey: string;
 }
 export interface RebaseResult {
@@ -217,7 +217,8 @@ export class GitOps {
       committerName: "%cN", committerEmail: "%cE", committerDate: "%cD",
       refNames: "%D", encoding: "%e", subject: "%s",
       body: "%b", bodyRaw: "%B", commitNotes: "%N", verificationFlag: "%G?",
-      signer: "%GS", signerKey: "%GK"};
+      signer: "%GS", signerKey: "%GK"
+    };
     const placeHolders = Object.values(format);
 
     let revisionRange;

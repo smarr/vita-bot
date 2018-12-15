@@ -18,7 +18,7 @@ describe("Git Operations", function() {
       expectCommitterInfo(result, TEST_BOT);
     });
 
-    it("log should return expected number of commits and the author/committer", async function () {
+    it("log should return expected number of commits and the author/committer", async function() {
       const results = await repo.log(2);
 
       expect(results).to.be.an("Array").with.lengthOf(2);
