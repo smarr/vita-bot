@@ -1,6 +1,6 @@
 import {
   GIT_MAIN_REPO, BRANCH_NO_CONFLICT, BRANCH_UPSTREAM, BRANCH_CONFLICT,
-  GIT_DOWNSTREAM_REPO, REPO_BASE, expectConflict, ensureMainRepo, ensureDownstreamRepo, BRANCH_ROOT, loadTestConfig, ensureRepoDoesNotExist, expectAuthorInfo
+  GIT_DOWNSTREAM_REPO, REPO_BASE, expectConflict, ensureMainRepo, ensureDownstreamRepo, BRANCH_ROOT, loadTestConfig, ensureRepoDoesNotExist, expectAuthorInfo, expectCommitterInfo, TEST_BOT
 } from "./test-repos";
 
 import { bot } from "../src/config";
@@ -65,6 +65,22 @@ describe("Rebase using test.yml", function() {
       expect(result.success).to.be.true;
       expect(result.rebase.conflicts).to.be.undefined;
     });
+
+    let repo: GitOps;
+
+    it("should not introduce new commits", async function() {
+      repo = new GitOps(repoPath, "Rebase Test", "rebase@example.org");
+
+      const log = await repo.log(100);
+      expect(log).to.be.of.length(4);
+      expect(log[0].subject).to.include("Partial extension");
+    });
+
+    it("should maintain author, only modify committer", async function() {
+      const head = await repo.getHead();
+      expectCommitterInfo(head, bot); // rebase changes the committer to the bot
+      expectAuthorInfo(head, TEST_BOT); // author remains the TEST_BOT
+    });
   });
 
   describe("with conflict", function() {
@@ -83,6 +99,13 @@ describe("Rebase using test.yml", function() {
       expectConflict(result.rebase);
     });
 
+    it("should not change the repo", async function() {
+      const repo = new GitOps(repoPath, "Rebase Test", "rebase@example.org");
+
+      const log = await repo.log(100);
+      expect(log).to.be.of.length(2);
+      expect(log[0].subject).to.include("Replaced");
+    });
   });
 
   describe("with fast forward", function() {
@@ -102,5 +125,20 @@ describe("Rebase using test.yml", function() {
       expect(result.rebase.conflicts).to.be.undefined;
     });
 
+    let repo: GitOps;
+
+    it("should not introduce new commits", async function() {
+      repo = new GitOps(repoPath, "Rebase Test", "rebase@example.org");
+
+      const log = await repo.log(100);
+      expect(log).to.be.of.length(3);
+      expect(log[0].subject).to.include("Extend file-1 more");
+    });
+
+    it("should maintain author and committer", async function() {
+      const head = await repo.getHead();
+      expectCommitterInfo(head, TEST_BOT);
+      expectAuthorInfo(head, TEST_BOT);
+    });
   });
 });
