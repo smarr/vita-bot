@@ -1,6 +1,5 @@
 import git, { SimpleGit } from "simple-git/promise";
 import { existsSync, mkdirSync } from "fs";
-import { DefaultLogFields } from "simple-git/typings/response";
 
 /**
  * Set author and committer information on the repository.
@@ -12,6 +11,31 @@ export function setAuthorInfo(repo: SimpleGit, authorName: string, authorEmail: 
   repo.env("GIT_COMMITTER_EMAIL", authorEmail);
 }
 
+export interface LogEntry {
+  commitHash:     string;
+  treeHash:       string;
+  parentHashes:   string;
+
+  authorName:     string;
+  authorEmail:    string;
+  authorDate:     string;
+
+  committerName:  string;
+  committerEmail: string;
+  committerDate:  string;
+
+  refNames: string;
+  encoding: string;
+  subject:  string;
+
+  body:     string;
+  bodyRaw:  string;
+  commitNotes: string;
+  verificationFlag: string;
+
+  signer:    string;
+  signerKey: string;
+}
 export interface RebaseResult {
   /** True, if the rebase operation succeeded. */
   success: boolean;
@@ -169,22 +193,62 @@ export class GitOps {
     return Promise.resolve();
   }
 
-  public async getHead(): Promise<DefaultLogFields>;
-  public async getHead(branch: string): Promise<DefaultLogFields>;
-  public async getHead(remoteName: string, branch: string): Promise<DefaultLogFields>;
-  public async getHead(remoteName?: string, branch?: string): Promise<DefaultLogFields> {
-    const options: any = { n: 1 };
+  public async getHead(): Promise<LogEntry>;
+  public async getHead(branch: string): Promise<LogEntry>;
+  public async getHead(remoteName: string, branch: string): Promise<LogEntry>;
+  public async getHead(remoteName?: string, branch?: string): Promise<LogEntry> {
+    const results = await this.log(1, <string> remoteName, <string> branch);
+    return Promise.resolve(results[0]);
+  }
+
+  public async log(n: number): Promise<LogEntry[]>;
+  public async log(n: number, branch: string): Promise<LogEntry[]>;
+  public async log(n: number, remoteName: string, branch: string): Promise<LogEntry[]>;
+  public async log(n: number, remoteName?: string, branch?: string): Promise<LogEntry[]> {
+    const separatorGit = "@@%%@@--vita--vita--@@%%@@%n"; // escaped for git
+    const separatorResult = "@@%@@--vita--vita--@@%@@\n";
+
+    const commitSepGit = "@@%%@@--end--here--@@%%@@%n";
+    const commitSepResult = "@@%@@--end--here--@@%@@\n";
+
+    const format = {
+      commitHash: "%H", treeHash: "%T", parentHashes: "%P",
+      authorName: "%aN", authorEmail: "%aE", authorDate: "%aD",
+      committerName: "%cN", committerEmail: "%cE", committerDate: "%cD",
+      refNames: "%D", encoding: "%e", subject: "%s",
+      body: "%b", bodyRaw: "%B", commitNotes: "%N", verificationFlag: "%G?",
+      signer: "%GS", signerKey: "%GK"};
+    const placeHolders = Object.values(format);
+
+    let revisionRange;
     if (remoteName !== undefined && branch !== undefined) {
-      options[remoteName + "/" + branch] = undefined;
+      revisionRange = remoteName + "/" + branch;
     } else if (remoteName !== undefined && branch === undefined) {
       // this case corresponds to the signature with just the branch
-      options[remoteName] = undefined;
+      revisionRange = remoteName;
     } else {
-      options["."] = undefined;
+      revisionRange = ".";
+    }
+    const result = await this.repo.raw(
+      ["log", "-n", "" + n, "--pretty=format:" + placeHolders.join(separatorGit) + commitSepGit, revisionRange]);
+
+    const results = [];
+    const logData = result.split(commitSepResult);
+
+    for (const logEntry of logData) {
+      if (logEntry.trim() === "") {
+        break;
+      }
+      const logData = logEntry.split(separatorResult);
+
+      const resultObj: any = {};
+      for (const k in format) {
+        resultObj[k] = logData.shift();
+      }
+      results.push(resultObj);
     }
 
-    const result = await this.repo.log(options);
-    return Promise.resolve(result.latest);
+    return Promise.resolve(results);
   }
 
   public async commit(path: string, msg: string) {

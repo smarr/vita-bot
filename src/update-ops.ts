@@ -1,6 +1,5 @@
 import { UpdateBranchConfig, BotDetails, UpdateSubmoduleConfig } from "./config-schema";
-import { GitOps, RebaseResult } from "./git-ops";
-import { DefaultLogFields } from "simple-git/typings/response";
+import { GitOps, RebaseResult, LogEntry } from "./git-ops";
 import { CommitSummary } from "simple-git/promise";
 
 /** The standard git upstream remote name. */
@@ -11,9 +10,9 @@ export interface UpdateBranchResult {
   fastForward: boolean;
   rebase: RebaseResult;
   heads: {
-    beforeUpdate: DefaultLogFields,
-    upstream: DefaultLogFields,
-    afterUpdate: DefaultLogFields
+    beforeUpdate: LogEntry,
+    upstream: LogEntry,
+    afterUpdate: LogEntry
   };
 }
 
@@ -21,8 +20,8 @@ export interface UpdateSubmoduleResult {
   success: boolean;
   forced: boolean;
   heads: {
-    beforeUpdate: DefaultLogFields,
-    afterUpdate: DefaultLogFields
+    beforeUpdate: LogEntry,
+    afterUpdate: LogEntry
   };
 }
 
@@ -69,7 +68,7 @@ export class UpdateBranch extends UpdateTask {
     const result = await this.repo.rebase(this.repoBranch, UPSTREAM_REMOTE + "/" + this.config.branch);
     const postUpdateHead = await this.repo.getHead();
 
-    const isFastForward = preUpdateHead.hash === postUpdateHead.hash;
+    const isFastForward = preUpdateHead.commitHash === postUpdateHead.commitHash;
 
     this.updateResult = {
       success: result.success,
@@ -132,7 +131,7 @@ export class UpdateSubmodule extends UpdateTask {
       }
     }
 
-    const updateHadEffect = preUpdateHead.hash !== postUpdateHead.hash;
+    const updateHadEffect = preUpdateHead.commitHash !== postUpdateHead.commitHash;
 
     this.updateResult = {
       success: updateHadEffect,
@@ -151,8 +150,8 @@ export class UpdateSubmodule extends UpdateTask {
       throw new Error("commitUpdate() should only be called after successful update");
     }
 
-    const prevDate = this.updateResult.heads.beforeUpdate.date;
-    const upstreamDate = this.updateResult.heads.afterUpdate.date;
+    const prevDate = this.updateResult.heads.beforeUpdate.committerDate;
+    const upstreamDate = this.updateResult.heads.afterUpdate.committerDate;
 
     const url = await this.repo.getSubmoduleUrl(this.submodulePath);
 

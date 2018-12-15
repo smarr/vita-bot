@@ -40,9 +40,9 @@ describe("Update submodule", function() {
       const repo = new GitOps(repoPath, bot.name, bot.email);
       const head = await repo.getHead();
 
-      expect(head.author_name).to.equal(bot.name);
-      expect(head.author_email).to.equal(bot.email);
-      expect(head.message).contains("Update submodule " + SUBMODULE_UPDATE);
+      expect(head.authorName).to.equal(bot.name);
+      expect(head.authorEmail).to.equal(bot.email);
+      expect(head.subject).contains("Update submodule " + SUBMODULE_UPDATE);
     });
   });
 
@@ -66,9 +66,9 @@ describe("Update submodule", function() {
       const repo = new GitOps(repoPath, bot.name, bot.email);
       const head = await repo.getHead();
 
-      expect(head.author_name).not.to.equal(bot.name);
-      expect(head.author_email).not.to.equal(bot.email);
-      expect(head.message).not.to.contain("Update submodule " + SUBMODULE_UPDATE);
+      expect(head.authorName).not.to.equal(bot.name);
+      expect(head.authorEmail).not.to.equal(bot.email);
+      expect(head.subject).not.to.contain("Update submodule " + SUBMODULE_UPDATE);
     });
   });
 
@@ -92,9 +92,9 @@ describe("Update submodule", function() {
       const repo = new GitOps(repoPath, bot.name, bot.email);
       const head = await repo.getHead();
 
-      expect(head.author_name).to.equal(bot.name);
-      expect(head.author_email).to.equal(bot.email);
-      expect(head.message).contains("Update submodule " + SUBMODULE_CONFLICT);
+      expect(head.authorName).to.equal(bot.name);
+      expect(head.authorEmail).to.equal(bot.email);
+      expect(head.subject).contains("Update submodule " + SUBMODULE_CONFLICT);
     });
   });
 });

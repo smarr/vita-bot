@@ -8,7 +8,7 @@ import git, { SimpleGit } from "simple-git/promise";
 import { normalize } from "path";
 
 import yaml from "js-yaml";
-import { setAuthorInfo } from "../src/git-ops";
+import { setAuthorInfo, LogEntry } from "../src/git-ops";
 import { DefaultLogFields } from "simple-git/typings/response";
 
 export const REPO_BASE = normalize(`${__dirname}/../../.base`);
@@ -30,9 +30,11 @@ export const BRANCH_ROOT = "root-master";
 export const SUBMODULE_UPDATE = "has-update";
 export const SUBMODULE_CONFLICT = "has-conflict";
 
+export const TEST_BOT = {name: "Test Bot", email: "test@example.org"};
+
 function makeTestGit(path?: string): SimpleGit {
   const repo = git(path);
-  setAuthorInfo(repo, "Test Bot", "test@example.org");
+  setAuthorInfo(repo, TEST_BOT.name, TEST_BOT.email);
   return repo;
 }
 
@@ -51,9 +53,14 @@ export function expectConflict(result: { success: boolean; msg: string; conflict
   expect(result.conflicts).to.have.lengthOf(1);
 }
 
-export function expectAuthorInfo(commit: DefaultLogFields, bot: BotDetails) {
-  expect(commit.author_name).to.equal(bot.name);
-  expect(commit.author_email).to.equal(bot.email);
+export function expectAuthorInfo(commit: LogEntry, bot: BotDetails) {
+  expect(commit.authorName).to.equal(bot.name);
+  expect(commit.authorEmail).to.equal(bot.email);
+}
+
+export function expectCommitterInfo(commit: LogEntry, bot: BotDetails) {
+  expect(commit.committerName).to.equal(bot.name);
+  expect(commit.committerEmail).to.equal(bot.email);
 }
 
 async function populateMainRepo() {
