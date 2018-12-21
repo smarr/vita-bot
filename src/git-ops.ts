@@ -233,7 +233,7 @@ export class GitOps {
     const result = await this.repo.raw(
       ["log", "-n", "" + n, "--pretty=format:" + placeHolders.join(separatorGit) + commitSepGit, revisionRange]);
 
-    const results = [];
+    const results: any[] = [];
     const logData = result.split(commitSepResult);
 
     for (const logEntry of logData) {

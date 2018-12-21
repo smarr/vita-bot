@@ -33,7 +33,7 @@ const installDetails = [
 
 function createInstallations() {
 
-  const installs = [];
+  const installs: any[] = [];
 
   for (const d of installDetails) {
     installs.push({
@@ -84,7 +84,7 @@ function createUserRepos(uri: string) {
   const accountId = parseInt(match[1]);
   const instDetail = installDetails[accountId - 1];
 
-  const repoDetails = [];
+  const repoDetails: any[] = [];
   for (const repo of instDetail.repos) {
     const fullName = instDetail.accountLogin + "/" + repo.name;
     repoDetails.push({
