@@ -2,8 +2,18 @@ language: node_js
 node_js:
   - node
 
+before_script:
+  - |
+   run() {
+     ID=`echo "$@" | sed -e 's/ /_/g'`
+     STR=`echo "$@"`
+     printf "travis_fold:start:$ID\n$STR\n"
+     eval "$@"
+     printf "travis_fold:end:$ID\n"
+   }
+
 cache: npm
 
 script:
-  - npm test
-  - npm run verify
+  - run npm test
+  - run npm run verify
