@@ -13,21 +13,21 @@ const installDetails = [
     accountLogin: "github",
     accountId: 1,
     appId: 1,
-    repos: [ {name: "test"}]
+    repos: [{ name: "test" }]
   },
   {
     installId: 2,
     accountLogin: "smarr",
     accountId: 2,
     appId: 1,
-    repos: [ {name: "SOMns"}, {name: "truffle"} ]
+    repos: [{ name: "SOMns" }, { name: "truffle" }]
   },
   {
     installId: 3,
     accountLogin: "SOM-st",
     accountId: 3,
     appId: 1,
-    repos: [ {name: "SOM"} ]
+    repos: [{ name: "SOM" }]
   }
 ];
 

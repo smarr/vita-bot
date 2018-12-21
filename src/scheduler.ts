@@ -1,11 +1,13 @@
 import Bottleneck from "bottleneck";
-import { AppsListInstallationsResponseItem,
+import {
+  AppsListInstallationsResponseItem,
   AppsListInstallationReposForAuthenticatedUserResponse,
-  AppsListInstallationReposForAuthenticatedUserResponseRepositoriesItem } from "@octokit/rest";
+  AppsListInstallationReposForAuthenticatedUserResponseRepositoriesItem
+} from "@octokit/rest";
 import { Application } from "probot";
 
-export interface GitHubRepository extends AppsListInstallationReposForAuthenticatedUserResponseRepositoriesItem {}
-export interface GitHubInstallation extends AppsListInstallationsResponseItem {}
+export interface GitHubRepository extends AppsListInstallationReposForAuthenticatedUserResponseRepositoriesItem { }
+export interface GitHubInstallation extends AppsListInstallationsResponseItem { }
 
 export interface SchedulerEvent {
   name: string; // "schedule"
@@ -50,7 +52,7 @@ export class RepositoryScheduler {
       this.requestScheduler = new Bottleneck({
         maxConcurrent: 1,
         reservoir: 0,
-        reservoirRefreshAmount:  Math.ceil(requestsPerSecond),
+        reservoirRefreshAmount: Math.ceil(requestsPerSecond),
         reservoirRefreshInterval: requestsPerSecond * 1000
       });
     }
@@ -117,7 +119,7 @@ export class RepositoryScheduler {
   private async getRepositories(installation: AppsListInstallationsResponseItem): Promise<GitHubRepository[]> {
     const github = await this.app.auth(installation.id);
 
-    const request = github.apps.listInstallationReposForAuthenticatedUser({installation_id: installation.id});
+    const request = github.apps.listInstallationReposForAuthenticatedUser({ installation_id: installation.id });
 
     const results: GitHubRepository[] = [];
     await github.paginate(request, async (page) => {
