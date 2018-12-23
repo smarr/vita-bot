@@ -20,6 +20,9 @@ export interface BotDetails {
 
   /** Used as author and committer email for git. */
   email: string;
+
+  /** GitHub user id corresponding to the bot. */
+  userId: string;
 }
 
 /** Defines a task to update branches in the given git repository. */

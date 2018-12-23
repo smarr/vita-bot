@@ -30,7 +30,11 @@ export const BRANCH_ROOT = "root-master";
 export const SUBMODULE_UPDATE = "has-update";
 export const SUBMODULE_CONFLICT = "has-conflict";
 
-export const TEST_BOT = { name: "Test Bot", email: "test@example.org" };
+export const TEST_BOT: BotDetails = {
+  name: "Test Bot",
+  email: "test@example.org",
+  userId: "test-bot"
+};
 
 function makeTestGit(path?: string): SimpleGit {
   const repo = git(path);

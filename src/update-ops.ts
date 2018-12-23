@@ -39,7 +39,7 @@ export interface UpdateSubmoduleResult {
   reportInfo: UpdateSubmoduleReport;
 }
 
-class UpdateTask {
+class GitUpdateTask {
   private readonly repoUrl: string;
 
   protected readonly repoBranch: string;
@@ -61,7 +61,7 @@ class UpdateTask {
   }
 }
 
-export class UpdateBranch extends UpdateTask {
+export class UpdateBranch extends GitUpdateTask {
   private readonly config: UpdateBranchConfig;
 
   private updateResult?: UpdateBranchResult;
@@ -99,7 +99,7 @@ export class UpdateBranch extends UpdateTask {
   }
 }
 
-export class UpdateSubmodule extends UpdateTask {
+export class UpdateSubmodule extends GitUpdateTask {
   private readonly submodulePath: string;
   private readonly config: UpdateSubmoduleConfig;
 
@@ -201,5 +201,133 @@ export class UpdateSubmodule extends UpdateTask {
     }
 
     return result;
+  }
+}
+
+export type UpdateMetadata = SubmoduleMetadata | BranchMetadata;
+
+export interface SubmoduleMetadata {
+  type: "submodule";
+  submodulePath: string;
+}
+
+export interface BranchMetadata {
+  type: "branch";
+}
+
+export interface UpdateResult {
+  updatedExisting: boolean;
+  newId?: number;
+
+  existingId?: number;
+  commentId?: number;
+}
+
+export class GitHubSubmoduleUpdate {
+  private readonly github: GitHubAPI;
+  private readonly owner: string;
+  private readonly repo: string;
+  private readonly updateReport: UpdateSubmoduleReport;
+  private readonly prBranch: string;
+  private readonly targetBranch: string;
+
+  constructor(github: GitHubAPI, owner: string,
+    repo: string, updateReport: UpdateSubmoduleReport, prBranch: string,
+    targetBranch: string) {
+    this.github = github;
+    this.owner = owner;
+    this.repo = repo;
+    this.updateReport = updateReport;
+    this.prBranch = prBranch;
+    this.targetBranch = targetBranch;
+  }
+
+  private async findPullRequest(): Promise<PullRequestsListResponseItem | null> {
+    const search: PullRequestsListParams = {
+      owner: this.owner,
+      repo: this.repo,
+      head: bot.userId,
+      state: "open",
+    };
+
+    let result: PullRequestsListResponseItem | null = null;
+
+    const request = this.github.pullRequests.list(search);
+    await this.github.paginate(request, async (page, done) => {
+      const pullRequests: PullRequestsListResponseItem[] = (await page).data;
+
+      for (const pr of pullRequests) {
+        const data: UpdateMetadata = readData(pr.body);
+        if (data !== null) {
+          switch (data.type) {
+            case "submodule": {
+              if (data.submodulePath === this.updateReport.submodule.path) {
+                result = pr;
+
+                if (done) { done(); }
+              }
+            }
+            default: {}
+          }
+        }
+      }
+    });
+
+    return Promise.resolve(result);
+  }
+
+  public async proposeUpdate(): Promise<UpdateResult> {
+    const pr = await this.findPullRequest();
+    if (pr === null) {
+      let msg = `This PR changes ${this.updateReport.submodule.path} as follows:
+
+Previous version from: ${this.updateReport.previousDate}
+Current version from:  ${this.updateReport.upstreamDate}
+
+Updated based on: ${this.updateReport.submodule.updateUrl}
+Using branch:     ${this.updateReport.submodule.updateBranch}
+`;
+
+      if (this.updateReport.forced) {
+        msg += "\n\n:warning: This update conflicted with the previous version and was forced.\n";
+      }
+
+      const metadata: SubmoduleMetadata = {
+        type: "submodule",
+        submodulePath: this.updateReport.submodule.path
+      };
+      msg = withData(msg, metadata);
+
+      const request: PullRequestsCreateParams = {
+        owner: this.owner,
+        repo: this.repo,
+        title: `Update submodule ${this.updateReport.submodule.path}`,
+        head: `${this.owner}/${this.prBranch}`,
+        base: `${this.owner}/${this.targetBranch}`,
+        body: msg,
+        maintainer_can_modify: true
+      };
+      const prResult = await this.github.pullRequests.create(request);
+
+      const result: UpdateResult = {
+        updatedExisting: false,
+        newId: prResult.data.number
+      };
+      return Promise.resolve(result);
+    } else {
+      const request: IssuesCreateCommentParams = {
+        owner: this.owner,
+        repo: this.repo,
+        number: pr.number,
+        body: "TODO"
+      };
+      const cmtResult = await this.github.issues.createComment(request);
+      const result: UpdateResult = {
+        updatedExisting: true,
+        existingId: pr.number,
+        commentId: cmtResult.data.id
+      };
+      return Promise.resolve(result);
+    }
   }
 }

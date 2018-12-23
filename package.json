@@ -50,6 +50,7 @@
   },
   "vita-bot": {
     "name": "Vita Bot",
-    "email": "vita-bot@stefan-marr.de"
+    "email": "vita-bot@stefan-marr.de",
+    "userId": "vita-bot"
   }
 }
