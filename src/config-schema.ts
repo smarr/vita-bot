@@ -23,6 +23,12 @@ export interface BotDetails {
 
   /** GitHub user id corresponding to the bot. */
   userId: string;
+
+  /**
+   * Branches to be queried for bot configurations.
+   * The branches will be queried in order and the first found config is used.
+   */
+  "config-branches": string[];
 }
 
 /** Defines a task to update branches in the given git repository. */

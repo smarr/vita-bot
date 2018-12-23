@@ -51,6 +51,11 @@
   "vita-bot": {
     "name": "Vita Bot",
     "email": "vita-bot@stefan-marr.de",
-    "userId": "vita-bot"
+    "userId": "vita-bot",
+    "config-branches": [
+      "dev",
+      "master",
+      "release"
+    ]
   }
 }

@@ -9,7 +9,6 @@ import { normalize } from "path";
 
 import yaml from "js-yaml";
 import { setAuthorInfo, LogEntry } from "../src/git-ops";
-import { DefaultLogFields } from "simple-git/typings/response";
 
 export const REPO_BASE = normalize(`${__dirname}/../../.base`);
 
@@ -33,7 +32,8 @@ export const SUBMODULE_CONFLICT = "has-conflict";
 export const TEST_BOT: BotDetails = {
   name: "Test Bot",
   email: "test@example.org",
-  userId: "test-bot"
+  userId: "test-bot",
+  "config-branches": ["dev", "master"]
 };
 
 function makeTestGit(path?: string): SimpleGit {
