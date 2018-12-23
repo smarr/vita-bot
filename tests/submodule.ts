@@ -46,7 +46,7 @@ describe("Update submodule", function() {
     });
   });
 
-  describe("without update available", async function() {
+  describe("without update available", function() {
     before(function() {
       repoPath = REPO_BASE + "/submodule-no-update";
       ensureRepoDoesNotExist(repoPath);
