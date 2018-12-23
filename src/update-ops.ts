@@ -16,6 +16,18 @@ export interface UpdateBranchResult {
   };
 }
 
+/** Information meant for human interaction. */
+export interface UpdateSubmoduleReport {
+  previousDate: string;
+  upstreamDate: string;
+  forced: boolean;
+  submodule: {
+    updateUrl: string;
+    updateBranch: string;
+    path: string;
+  };
+}
+
 export interface UpdateSubmoduleResult {
   success: boolean;
   forced: boolean;
@@ -23,6 +35,8 @@ export interface UpdateSubmoduleResult {
     beforeUpdate: LogEntry,
     afterUpdate: LogEntry
   };
+  /** Information meant for human interaction. */
+  reportInfo: UpdateSubmoduleReport;
 }
 
 class UpdateTask {
@@ -114,7 +128,7 @@ export class UpdateSubmodule extends UpdateTask {
 
     const preUpdateHead = await this.subRepo.getHead();
 
-    let postUpdateHead;
+    let postUpdateHead: LogEntry;
     let updateWasForced = false;
 
     try {
@@ -132,6 +146,7 @@ export class UpdateSubmodule extends UpdateTask {
     }
 
     const updateHadEffect = preUpdateHead.commitHash !== postUpdateHead.commitHash;
+    const url = await this.repo.getSubmoduleUrl(this.submodulePath);
 
     this.updateResult = {
       success: updateHadEffect,
@@ -139,6 +154,16 @@ export class UpdateSubmodule extends UpdateTask {
       heads: {
         beforeUpdate: preUpdateHead,
         afterUpdate: postUpdateHead
+      },
+      reportInfo: {
+        previousDate: preUpdateHead.committerDate,
+        upstreamDate: postUpdateHead.committerDate,
+        forced: updateWasForced,
+        submodule: {
+          updateUrl: url,
+          updateBranch: this.config.branch,
+          path: this.submodulePath
+        }
       }
     };
 
@@ -150,20 +175,17 @@ export class UpdateSubmodule extends UpdateTask {
       throw new Error("commitUpdate() should only be called after successful update");
     }
 
-    const prevDate = this.updateResult.heads.beforeUpdate.committerDate;
-    const upstreamDate = this.updateResult.heads.afterUpdate.committerDate;
+    const info = this.updateResult.reportInfo;
 
-    const url = await this.repo.getSubmoduleUrl(this.submodulePath);
+    let msg = `Update submodule ${info.submodule.path}
 
-    let msg = `Update submodule ${this.submodulePath}
+    Previous version from: ${info.previousDate}
+    Current version from:  ${info.upstreamDate}
 
-    Previous version from: ${prevDate}
-    Current version from:  ${upstreamDate}
+    Updated based on: ${info.submodule.updateUrl}
+    Using branch:     ${info.submodule.updateBranch}\n`;
 
-    Updated based on: ${url}
-    Using branch:     ${this.config.branch}\n`;
-
-    if (this.updateResult.forced) {
+    if (info.forced) {
       msg += "\n\nThis update conflicted with the previous version and was forced.\n";
     }
 
