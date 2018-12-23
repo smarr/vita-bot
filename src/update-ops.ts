@@ -1,6 +1,11 @@
+import { bot } from "./config";
 import { UpdateBranchConfig, BotDetails, UpdateSubmoduleConfig } from "./config-schema";
 import { GitOps, RebaseResult, LogEntry } from "./git-ops";
+import { readData, withData } from "./issue-metadata";
+
+import { PullRequestsListResponseItem, PullRequestsListParams, PullRequestsCreateParams, IssuesCreateCommentParams } from "@octokit/rest";
 import { CommitSummary } from "simple-git/promise";
+import { GitHubAPI } from "probot/lib/github";
 
 /** The standard git upstream remote name. */
 const UPSTREAM_REMOTE = "upstream";
