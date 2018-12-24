@@ -6,8 +6,17 @@ export interface Configuration {
 }
 
 export interface BotConfig {
+  /** Tasks to update branches. */
   "update-branches": { [branchPattern: string]: UpdateBranchConfig };
+
+  /** Tasks to update submodules. */
   "update-submodules": { [submodulePath: string]: UpdateSubmoduleConfig };
+
+  /**
+   * For submodule updates, this is the branch they should be applied on.
+   * This is also going to be the branch, against which pull requests will be created.
+   */
+  "target-branch": string;
 }
 
 /**
