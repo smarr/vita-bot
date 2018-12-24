@@ -270,6 +270,7 @@ export class GitHubSubmoduleUpdate {
                 result = pr;
 
                 if (done) { done(); }
+                break;
               }
             }
             default: {}
