@@ -9,13 +9,10 @@ import { Application } from "probot";
 export interface GitHubRepository extends AppsListInstallationReposForAuthenticatedUserResponseRepositoriesItem { }
 export interface GitHubInstallation extends AppsListInstallationsResponseItem { }
 
-export interface SchedulerEvent {
-  name: string; // "schedule"
-  payload: {
-    action: string; // "repository"
-    installation: GitHubInstallation;
-    repository: GitHubRepository;
-  };
+export interface SchedulerPayload {
+  action: "repository";
+  installation: GitHubInstallation;
+  repository: GitHubRepository;
 }
 
 export class RepositoryScheduler {
@@ -147,13 +144,14 @@ export class RepositoryScheduler {
 
     for (const [installation, repos] of this.repositories.entries()) {
       for (const repo of repos) {
+        const payload: SchedulerPayload = {
+          action: "repository",
+          installation: installation,
+          repository: repo
+        };
         const repoUpdateEvent = {
           name: "schedule",
-          payload: {
-            action: "repository",
-            installation: installation,
-            repository: repo
-          }
+          payload: payload
         };
 
         if (this.requestScheduler === undefined) {
