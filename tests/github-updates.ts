@@ -3,6 +3,7 @@ import { GitHubAPI } from "probot/lib/github";
 import { GitHubSubmoduleUpdate, UpdateResult, SubmoduleMetadata, UpdateSubmoduleReport } from "../src/update-ops";
 import nock, { disableNetConnect, Scope } from "nock";
 import { readData, withData } from "../src/issue-metadata";
+import { GITHUB_API } from "./test-data";
 
 const EXISTING_ISSUE_ID = 41;
 const NEW_ISSUE_ID = 42;
@@ -28,7 +29,6 @@ const COMMENT_ID = 666;
 
 disableNetConnect();
 
-const GITHUB_API = "https://api.github.com";
 const github = GitHubAPI();
 
 describe("GitHub interaction", function() {

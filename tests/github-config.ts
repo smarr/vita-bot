@@ -4,9 +4,9 @@ import { BotConfig } from "../src/config-schema";
 import { expect } from "chai";
 import { GitHubAPI } from "probot/lib/github";
 import nock, { disableNetConnect } from "nock";
+import { GITHUB_API } from "./test-data";
 
 const github = GitHubAPI();
-const GITHUB_API = "https://api.github.com";
 
 const TEST_BASIC_YAML = `
 update-branches:
