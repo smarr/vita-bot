@@ -40,13 +40,13 @@
   },
   "scripts": {
     "postinstall": "npm run compile",
-    "compile": "node ./node_modules/typescript/bin/tsc",
-    "format": "node ./node_modules/typescript-formatter/bin/tsfmt -r",
-    "verifyformat": "node ./node_modules/typescript-formatter/bin/tsfmt --verify",
+    "compile": "tsc",
+    "format": "tsfmt -r",
+    "verifyformat": "tsfmt --verify",
     "verify": "npm run lint && npm run verifyformat",
-    "lint": "node_modules/tslint/bin/tslint -c tslint.json --project tsconfig.json",
-    "watch": "node ./node_modules/typescript/bin/tsc -w",
-    "test": "node ./node_modules/mocha/bin/mocha -t 10000000 -u bdd ./dist/tests/"
+    "lint": "tslint -c tslint.json --project tsconfig.json",
+    "watch": "tsc -w",
+    "test": "mocha -t 10000000 -u bdd ./dist/tests/"
   },
   "vita-bot": {
     "name": "Vita Bot",
