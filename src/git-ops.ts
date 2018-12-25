@@ -123,8 +123,7 @@ export class GitOps {
   }
 
   public async rebase(branch: string, ontoUpstream: string): Promise<RebaseResult> {
-    const branches = await this.repo.branchLocal();
-    if (branches.all.includes(GitOps.WORK_IN_PROGRESS_BRANCH)) {
+    if (await this.hasBranch(GitOps.WORK_IN_PROGRESS_BRANCH)) {
       await this.repo.checkout(branch);
       await this.repo.branch(["-D", GitOps.WORK_IN_PROGRESS_BRANCH]);
     }
@@ -173,10 +172,14 @@ export class GitOps {
     }
   }
 
+  public async hasBranch(branchName: string) {
+    const branches = await this.repo.branchLocal();
+    return Promise.resolve(branches.all.includes(branchName));
+  }
+
   public async ensureBranch(remoteName: string, branch: string) {
     await this.repo.reset("hard");
-    const branches = await this.repo.branchLocal();
-    if (branches.all.includes(branch)) {
+    if (await this.hasBranch(branch)) {
       return Promise.resolve();
     } else {
       return this.repo.checkoutBranch(branch, remoteName + "/" + branch);
