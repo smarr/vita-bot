@@ -7,6 +7,7 @@ export interface WorkingCopyResult {
   existingFork: boolean;
   owner: string;
   repo: string;
+  cloneUrl: string;
 }
 
 export class GithubWorkingCopy {
@@ -33,14 +34,19 @@ export class GithubWorkingCopy {
     }
   }
 
-  private async fork(owner: string, repo: string): Promise<string> {
+  private async fork(owner: string, repo: string): Promise<WorkingCopyResult> {
     const params: ReposCreateForkParams = {
       owner: owner,
       repo: repo,
       organization: bot.userId
     };
     const response = await this.github.repos.createFork(params);
-    return Promise.resolve(response.data.name);
+    return Promise.resolve({
+      existingFork: false,
+      owner: bot.userId,
+      repo: response.data.name,
+      cloneUrl: response.data.clone_url
+    });
   }
 
   private async findRepoWithSuffix(sourceOwner: string, sourceRepo: string): Promise<ReposGetResponse | null> {
@@ -71,7 +77,7 @@ export class GithubWorkingCopy {
     return Promise.resolve(result);
   }
 
-  public async ensureWorkingInBotUser(): Promise<WorkingCopyResult> {
+  public async ensureCopyInBotUser(): Promise<WorkingCopyResult> {
     const targetRepo = await this.getRepo(this.owner, this.repo);
 
     if (targetRepo === null) {
@@ -94,7 +100,8 @@ export class GithubWorkingCopy {
       return Promise.resolve({
         existingFork: true,
         owner: bot.userId,
-        repo: this.repo
+        repo: this.repo,
+        cloneUrl: botRepo.clone_url
       });
     }
 
@@ -104,16 +111,12 @@ export class GithubWorkingCopy {
         return Promise.resolve({
           existingFork: true,
           owner: bot.userId,
-          repo: result.name
+          repo: result.name,
+          cloneUrl: result.clone_url
         });
       }
     }
 
-    const repoName = await this.fork(sourceOwner, sourceRepo);
-    return Promise.resolve({
-      existingFork: false,
-      owner: bot.userId,
-      repo: repoName
-    });
+    return this.fork(sourceOwner, sourceRepo);
   }
 }
