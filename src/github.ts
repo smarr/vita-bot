@@ -3,10 +3,13 @@ import { bot } from "./config";
 import { ReposGetResponse, ReposCreateForkParams, ReposListForOrgParams, ReposListForOrgResponseItem } from "@octokit/rest";
 import { GitHubAPI } from "probot/lib/github";
 
-export interface WorkingCopyResult {
-  existingFork: boolean;
+export interface GithubRepo {
   owner: string;
   repo: string;
+}
+
+export interface WorkingCopyResult extends GithubRepo {
+  existingFork: boolean;
   cloneUrl: string;
 }
 

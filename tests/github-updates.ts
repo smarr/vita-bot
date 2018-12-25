@@ -4,6 +4,8 @@ import { GitHubSubmoduleUpdate, UpdateResult, SubmoduleMetadata, UpdateSubmodule
 import nock, { disableNetConnect, Scope } from "nock";
 import { readData, withData } from "../src/issue-metadata";
 import { GITHUB_API } from "./test-data";
+import { TEST_BOT } from "./test-repos";
+import { GithubRepo } from "../src/github";
 
 // TODO: somewhere else, we need to test that things are pushed into the right
 //       place, before this github interaction takes places: see update-pushes.ts
@@ -13,8 +15,8 @@ const NEW_ISSUE_ID = 42;
 const SUBMODULE_PATH = "libs/truffle";
 
 const UPDATE_SUBMODULE_REPORT: UpdateSubmoduleReport = {
-  previousDate: "prev-date",
-  upstreamDate: "up-date",
+  previousDate: "2018-12-01 15:12:34 +0100",
+  upstreamDate: "2018-12-10 15:12:34 +0100",
   forced: true,
   submodule: {
     path: SUBMODULE_PATH,
@@ -131,6 +133,43 @@ describe("GitHub interaction", function() {
       it("should update PR with an update comment", function() {
         expect(createPost.isDone()).to.be.true;
         expect(updateResult.commentId).to.equal(COMMENT_ID);
+      });
+    });
+  });
+
+  describe("getBranchName", function() {
+    const repo: GithubRepo = {owner: TEST_BOT.userId, repo: "SOMns"};
+
+    let updater: GitHubSubmoduleUpdate;
+    describe("Branch with name exists", function() {
+      before(function() {
+        nock(GITHUB_API)
+          .get("/repos/" + TEST_BOT.userId + "/SOMns/branches")
+          .reply(200, [
+            {name: "update-libs-truffle"},
+            {name: "update-libs-truffle-2018-12-10"},
+            {name: "update-libs-truffle-2018-12-10-1"},
+          ]);
+        updater = new GitHubSubmoduleUpdate(github, "smarr", "SOMns", UPDATE_SUBMODULE_REPORT, "dev");
+      });
+
+      it("should get a name that's not yet in use", async function() {
+        const name = await updater.getBranchName(repo);
+        expect(name).is.equal("update-libs-truffle-2018-12-10-2");
+      });
+    });
+
+    describe("Branch with name does not exist", function() {
+      before(function() {
+        nock(GITHUB_API)
+          .get("/repos/" + TEST_BOT.userId + "/SOMns/branches")
+          .reply(200, []);
+        updater = new GitHubSubmoduleUpdate(github, "smarr", "SOMns", UPDATE_SUBMODULE_REPORT, "dev");
+      });
+
+      it("should simply give a suitable branch name", async function() {
+        const name = await updater.getBranchName(repo);
+        expect(name).is.equal("update-libs-truffle");
       });
     });
   });

@@ -1,9 +1,10 @@
 import { bot } from "./config";
 import { UpdateBranchConfig, BotDetails, UpdateSubmoduleConfig } from "./config-schema";
 import { GitOps, RebaseResult, LogEntry } from "./git-ops";
+import { GithubRepo } from "./github";
 import { readData, withData } from "./issue-metadata";
 
-import { PullRequestsListResponseItem, PullRequestsListParams, PullRequestsCreateParams, IssuesCreateCommentParams } from "@octokit/rest";
+import { PullRequestsListResponseItem, PullRequestsListParams, PullRequestsCreateParams, IssuesCreateCommentParams, ReposListBranchesResponseItem } from "@octokit/rest";
 import { CommitSummary } from "simple-git/promise";
 import { GitHubAPI } from "probot/lib/github";
 
@@ -259,6 +260,47 @@ export class GitHubSubmoduleUpdate {
       const branchName = this.existingPullRequest.head.ref;
       return Promise.resolve(branchName);
     }
+  }
+
+  private async getBranches(repo: GithubRepo): Promise<string[]> {
+    const request = this.github.repos.listBranches({owner: repo.owner, repo: repo.repo});
+
+    const results: string[] = [];
+    await this.github.paginate(request, async (page) => {
+      const branches: ReposListBranchesResponseItem[] = (await page).data;
+      for (const branch of branches) {
+        results.push(branch.name);
+      }
+    });
+
+    return Promise.resolve(results);
+  }
+
+  public async getBranchName(repo: GithubRepo): Promise<string> {
+    const submoduleName = this.updateReport.submodule.path.replace(/\//g, "-");
+    let branchName = "update-" + submoduleName;
+
+    const existingBranches = await this.getBranches(repo);
+
+    if (!existingBranches.includes(branchName)) {
+      return Promise.resolve(branchName);
+    }
+
+    const date = new Date(this.updateReport.upstreamDate);
+    branchName += `-${date.getUTCFullYear()}-${date.getUTCMonth() + 1}-${date.getUTCDate()}`;
+
+    if (!existingBranches.includes(branchName)) {
+      return Promise.resolve(branchName);
+    }
+
+    let branchNameWithNumber: string;
+    let i = 1;
+    do {
+      branchNameWithNumber = branchName + `-${i}`;
+      i += 1;
+    } while (existingBranches.includes(branchNameWithNumber));
+
+    return Promise.resolve(branchNameWithNumber);
   }
 
   private async findPullRequest(): Promise<PullRequestsListResponseItem | null> {
