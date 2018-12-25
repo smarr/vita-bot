@@ -37,7 +37,7 @@ describe("Managed repositories need to be forked", function() {
         });
 
       const workingCopy = new GithubWorkingCopy("smarr", "SOMns", github);
-      result = await workingCopy.ensureWorkingInBotUser();
+      result = await workingCopy.ensureCopyInBotUser();
     });
 
     it("Should not find a repo", function() {
@@ -75,7 +75,7 @@ describe("Managed repositories need to be forked", function() {
         });
 
       const workingCopy = new GithubWorkingCopy("smarr", "SOMns", github);
-      result = await workingCopy.ensureWorkingInBotUser();
+      result = await workingCopy.ensureCopyInBotUser();
     });
 
     it("Should find the repo", function() {
@@ -117,7 +117,7 @@ describe("Managed repositories need to be forked", function() {
           });
 
         const workingCopy = new GithubWorkingCopy("smarr", "SOMns", github);
-        result = await workingCopy.ensureWorkingInBotUser();
+        result = await workingCopy.ensureCopyInBotUser();
       });
 
       it("should create a new fork", function() {
@@ -163,7 +163,7 @@ describe("Managed repositories need to be forked", function() {
           });
 
         const workingCopy = new GithubWorkingCopy("smarr", "SOMns", github);
-        result = await workingCopy.ensureWorkingInBotUser();
+        result = await workingCopy.ensureCopyInBotUser();
       });
 
       it("should create a new fork", function() {
