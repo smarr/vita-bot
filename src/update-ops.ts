@@ -10,6 +10,7 @@ import { GitHubAPI } from "probot/lib/github";
 
 /** The standard git upstream remote name. */
 const UPSTREAM_REMOTE = "upstream";
+const WORKING_COPY_REMOTE = "workingcopy";
 
 export interface UpdateBranchResult {
   success: boolean;
@@ -207,6 +208,11 @@ export class UpdateSubmodule extends GitUpdateTask {
     }
 
     return result;
+  }
+
+  public async pushBranch(remoteBranch: string, remoteUrl: string) {
+    await this.repo.ensureRemote(WORKING_COPY_REMOTE, remoteUrl);
+    await this.repo.forcePush(WORKING_COPY_REMOTE, this.repoBranch, remoteBranch);
   }
 }
 

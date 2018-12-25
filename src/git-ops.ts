@@ -265,4 +265,8 @@ export class GitOps {
     const url = await this.repo.raw(["config", "--file=.gitmodules", "--get", "submodule." + submodulePath + ".url"]);
     return Promise.resolve(url.trim());
   }
+
+  public async forcePush(remoteName: string, localBranch: string, remoteBranch: string) {
+    return this.repo.push(remoteName, localBranch + ":" + remoteBranch, {"--force": null});
+  }
 }

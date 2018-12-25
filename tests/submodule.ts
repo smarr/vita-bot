@@ -1,7 +1,7 @@
 import { bot } from "../src/config";
 import { UpdateSubmodule } from "../src/update-ops";
 
-import { REPO_BASE, loadTestConfig, ensureRepoWithSubmodules, SUBMODULE_UPDATE, SUBMODULE_CONFLICT, ensureRepoDoesNotExist } from "./test-repos";
+import { REPO_BASE, loadTestConfig, ensureRepoWithSubmodules, SUBMODULE_UPDATE, SUBMODULE_CONFLICT, ensureRepoDoesNotExist, PUSH_REPO, PUSH_REPO_NON_EXISTING_BRANCH, PUSH_REPO_EXISTING_BRANCH, ensureRepoForPushes } from "./test-repos";
 
 import { expect } from "chai";
 import { GitOps } from "../src/git-ops";
@@ -17,6 +17,7 @@ describe("Update submodule", function() {
 
   before(async function() {
     await ensureRepoWithSubmodules();
+    await ensureRepoForPushes();
   });
 
   describe("with a fast forward change", function() {
@@ -36,13 +37,33 @@ describe("Update submodule", function() {
       expect(result.forced).to.be.false;
     });
 
+    let commitHash: string;
     it("should commit the update", async function() {
       const repo = new GitOps(repoPath, bot.name, bot.email);
       const head = await repo.getHead();
 
+      commitHash = head.commitHash;
       expect(head.authorName).to.equal(bot.name);
       expect(head.authorEmail).to.equal(bot.email);
       expect(head.subject).contains("Update submodule " + SUBMODULE_UPDATE);
+    });
+
+    it("should be able to push the change to empty repo", async function() {
+      await update.pushBranch(PUSH_REPO_NON_EXISTING_BRANCH, PUSH_REPO);
+
+      const repo = new GitOps(PUSH_REPO, bot.name, bot.email);
+      const head = (await repo.log(1, PUSH_REPO_NON_EXISTING_BRANCH))[0];
+
+      expect(head.commitHash).to.equal(commitHash);
+    });
+
+    it("should be able to force-push changes to repo with conflicting branch", async function() {
+      await update.pushBranch(PUSH_REPO_EXISTING_BRANCH, PUSH_REPO);
+
+      const repo = new GitOps(PUSH_REPO, bot.name, bot.email);
+      const head = (await repo.log(1, PUSH_REPO_EXISTING_BRANCH))[0];
+
+      expect(head.commitHash).to.equal(commitHash);
     });
   });
 

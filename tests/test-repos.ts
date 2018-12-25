@@ -14,7 +14,14 @@ export const REPO_BASE = normalize(`${__dirname}/../../.base`);
 
 export const GIT_MAIN_REPO = `${REPO_BASE}/upstream`;
 export const GIT_DOWNSTREAM_REPO = `${REPO_BASE}/downstream`;
+
+export const GIT_SUBMODULE_REPO_NAME = "with-submodule";
 export const GIT_SUBMODULE_REPO = `${REPO_BASE}/with-submodule`;
+
+export const PUSH_REPO = `${REPO_BASE}/push-target`;
+export const PUSH_REPO_NON_EXISTING_BRANCH = "non-existing";
+export const PUSH_REPO_EXISTING_BRANCH = "existing";
+
 
 export const TEST_TEXT = "1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n";
 
@@ -173,6 +180,40 @@ export async function ensureRepoWithSubmodules() {
 
   try {
     await populateRepoWithSubmodules();
+  } finally {
+    chdir("..");
+    submoduleCreated = true;
+  }
+}
+
+let pushRepoCreated = false;
+
+export async function ensureRepoForPushes() {
+  if (pushRepoCreated === true) {
+    return;
+  }
+
+  ensureRepoDoesNotExist(PUSH_REPO);
+
+  mkdirSync(PUSH_REPO, { recursive: true });
+  chdir(PUSH_REPO);
+
+  try {
+    const repo = makeTestGit();
+    await repo.init();
+
+    writeFileSync(FILE2, TEST_TEXT);
+    await repo.add(FILE2);
+    await repo.commit("Initial Commit on master for push-repo");
+
+    await repo.checkoutBranch(PUSH_REPO_EXISTING_BRANCH, "master");
+
+    writeFileSync(FILE1, TEST_TEXT);
+    await repo.add(FILE1);
+    await repo.commit("Second commit to have some well known existing branch");
+
+    // go back to master, and have PUSH_REPO_EXISTING_BRANCH not checked out
+    await repo.checkout("master");
   } finally {
     chdir("..");
     submoduleCreated = true;
