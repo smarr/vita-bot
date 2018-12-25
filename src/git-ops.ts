@@ -75,6 +75,13 @@ export class GitOps {
   }
 
   /**
+   * Initialize an empty repository
+   */
+  public async init() {
+    return this.repo.init();
+  }
+
+  /**
    * If necessary, it creates the repository be cloning, otherwise it ensures
    * that the repo is up-to-date.
    *
