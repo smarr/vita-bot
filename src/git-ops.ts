@@ -1,5 +1,5 @@
-import git, { SimpleGit } from "simple-git/promise";
 import { existsSync, mkdirSync } from "fs";
+import git, { SimpleGit } from "simple-git/promise";
 
 /**
  * Set author and committer information on the repository.
@@ -221,7 +221,7 @@ export class GitOps {
     };
     const placeHolders = Object.values(format);
 
-    let revisionRange;
+    let revisionRange: string;
     if (remoteName !== undefined && branch !== undefined) {
       revisionRange = remoteName + "/" + branch;
     } else if (remoteName !== undefined && branch === undefined) {
@@ -232,6 +232,10 @@ export class GitOps {
     }
     const result = await this.repo.raw(
       ["log", "-n", "" + n, "--pretty=format:" + placeHolders.join(separatorGit) + commitSepGit, revisionRange]);
+
+    if (result === null) {
+      throw new Error(`GitOps.log failed. n: ${n} remoteName: ${remoteName} branch: ${branch}`);
+    }
 
     const results: any[] = [];
     const logData = result.split(commitSepResult);
