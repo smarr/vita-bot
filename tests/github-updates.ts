@@ -5,6 +5,9 @@ import nock, { disableNetConnect, Scope } from "nock";
 import { readData, withData } from "../src/issue-metadata";
 import { GITHUB_API } from "./test-data";
 
+// TODO: somewhere else, we need to test that things are pushed into the right
+//       place, before this github interaction takes places: see update-pushes.ts
+
 const EXISTING_ISSUE_ID = 41;
 const NEW_ISSUE_ID = 42;
 const SUBMODULE_PATH = "libs/truffle";
@@ -38,6 +41,7 @@ describe("GitHub interaction", function() {
     let updateResult: UpdateResult;
     let createPost: Scope;
     let createBody: any;
+    let existingBranchName: string | null;
 
     describe("First update", function() {
       before(async function() {
@@ -58,13 +62,15 @@ describe("GitHub interaction", function() {
             "title": "new-feature",
           });
 
-        updater = new GitHubSubmoduleUpdate(github, "smarr", "SOMns", UPDATE_SUBMODULE_REPORT, "vita/libs-truffle/prev-date", "dev");
-        updateResult = await updater.proposeUpdate();
+        updater = new GitHubSubmoduleUpdate(github, "smarr", "SOMns", UPDATE_SUBMODULE_REPORT, "dev");
+        existingBranchName = await updater.findExistingPullRequest();
+        updateResult = await updater.proposeUpdate("vita/libs-truffle/prev-date");
       });
 
       it("should check whether PR exists and not find any open one", function() {
         expect(updateResult.updatedExisting).to.be.false;
         expect(updateResult.existingId).to.be.undefined;
+        expect(existingBranchName).to.be.null;
       });
 
       it("should create PR", function() {
@@ -96,7 +102,10 @@ describe("GitHub interaction", function() {
                 "id": 1,
                 "type": "Bot",
               },
-              "body": withData("Please pull these awesome changes\n", SUBMODULE_META)
+              "body": withData("Please pull these awesome changes\n", SUBMODULE_META),
+              "head": {
+                "ref" : "vita/libs-truffle/prev-date"
+              }
             }
           ]);
 
@@ -108,13 +117,15 @@ describe("GitHub interaction", function() {
             "created_at": "2011-04-14T16:00:49Z"
           });
 
-        updater = new GitHubSubmoduleUpdate(github, "smarr", "SOMns", UPDATE_SUBMODULE_REPORT, "vita/libs-truffle/prev-date", "dev");
-        updateResult = await updater.proposeUpdate();
+        updater = new GitHubSubmoduleUpdate(github, "smarr", "SOMns", UPDATE_SUBMODULE_REPORT, "dev");
+        existingBranchName = await updater.findExistingPullRequest();
+        updateResult = await updater.proposeUpdate("vita/libs-truffle/prev-date");
       });
 
       it("should check whether PR exists and find an open one", function() {
         expect(updateResult.updatedExisting).to.be.true;
         expect(updateResult.existingId).to.equal(EXISTING_ISSUE_ID);
+        expect(existingBranchName).to.equal("vita/libs-truffle/prev-date");
       });
 
       it("should update PR with an update comment", function() {

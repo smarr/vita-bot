@@ -233,18 +233,32 @@ export class GitHubSubmoduleUpdate {
   private readonly owner: string;
   private readonly repo: string;
   private readonly updateReport: UpdateSubmoduleReport;
-  private readonly prBranch: string;
   private readonly targetBranch: string;
 
-  constructor(github: GitHubAPI, owner: string,
-    repo: string, updateReport: UpdateSubmoduleReport, prBranch: string,
-    targetBranch: string) {
+  private existingPullRequest?: PullRequestsListResponseItem | null;
+
+  /**
+   * @param targetBranch the name of the branch against which the PR is created
+   */
+  constructor(github: GitHubAPI, owner: string, repo: string,
+    updateReport: UpdateSubmoduleReport, targetBranch: string) {
     this.github = github;
     this.owner = owner;
     this.repo = repo;
     this.updateReport = updateReport;
-    this.prBranch = prBranch;
     this.targetBranch = targetBranch;
+
+    this.existingPullRequest = undefined;
+  }
+
+  public async findExistingPullRequest(): Promise<string | null> {
+    this.existingPullRequest = await this.findPullRequest();
+    if (this.existingPullRequest === null) {
+      return Promise.resolve(null);
+    } else {
+      const branchName = this.existingPullRequest.head.ref;
+      return Promise.resolve(branchName);
+    }
   }
 
   private async findPullRequest(): Promise<PullRequestsListResponseItem | null> {
@@ -282,9 +296,14 @@ export class GitHubSubmoduleUpdate {
     return Promise.resolve(result);
   }
 
-  public async proposeUpdate(): Promise<UpdateResult> {
-    const pr = await this.findPullRequest();
-    if (pr === null) {
+  /**
+   * @param prBranch the name of the branch containing the changes
+   */
+  public async proposeUpdate(prBranch: string): Promise<UpdateResult> {
+    if (this.existingPullRequest === undefined) {
+      throw new Error("findExistingPullRequest should be used first, to know whether a PR exists");
+    }
+    if (this.existingPullRequest === null) {
       let msg = `This PR changes ${this.updateReport.submodule.path} as follows:
 
 Previous version from: ${this.updateReport.previousDate}
@@ -308,7 +327,7 @@ Using branch:     ${this.updateReport.submodule.updateBranch}
         owner: this.owner,
         repo: this.repo,
         title: `Update submodule ${this.updateReport.submodule.path}`,
-        head: `${this.owner}/${this.prBranch}`,
+        head: `${this.owner}/${prBranch}`,
         base: `${this.owner}/${this.targetBranch}`,
         body: msg,
         maintainer_can_modify: true
@@ -321,16 +340,18 @@ Using branch:     ${this.updateReport.submodule.updateBranch}
       };
       return Promise.resolve(result);
     } else {
+      let msg = `PR updated with changes to ${this.updateReport.submodule.path} from ${this.updateReport.upstreamDate}.`;
+
       const request: IssuesCreateCommentParams = {
         owner: this.owner,
         repo: this.repo,
-        number: pr.number,
-        body: "TODO"
+        number: this.existingPullRequest.number,
+        body: msg
       };
       const cmtResult = await this.github.issues.createComment(request);
       const result: UpdateResult = {
         updatedExisting: true,
-        existingId: pr.number,
+        existingId: this.existingPullRequest.number,
         commentId: cmtResult.data.id
       };
       return Promise.resolve(result);
