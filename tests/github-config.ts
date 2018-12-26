@@ -38,6 +38,10 @@ submodules:
 disableNetConnect();
 
 describe("GitHub configuration access", function() {
+  after(function() {
+    nock.cleanAll();
+  });
+
   describe("Reading of project configuration from .github/config.yml", function() {
     let config: BotConfig;
 

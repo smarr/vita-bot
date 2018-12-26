@@ -4,7 +4,9 @@ import { bot } from "../src/config";
 import { GitOps } from "../src/git-ops";
 
 import { RSA_KEY, GITHUB_API } from "./test-data";
-import { TEST_BOT, expectAuthorInfo, REPO_BASE, GIT_SUBMODULE_REPO, ensureRepoWithSubmodules, SUBMODULE_UPDATE, GIT_SUBMODULE_REPO_NAME, PUSH_REPO, ensureRepoForPushes, ensureRepoDoesNotExist } from "./test-repos";
+import { TEST_BOT, expectAuthorInfo, GIT_SUBMODULE_REPO,
+  ensureRepoWithSubmodules, SUBMODULE_UPDATE, GIT_SUBMODULE_REPO_NAME,
+  PUSH_REPO, ensureRepoForPushes, ensureRepoDoesNotExist } from "./test-repos";
 
 import { expect } from "chai";
 import nock, { disableNetConnect, Scope } from "nock";
@@ -34,6 +36,10 @@ const REPO_DEF = {
 disableNetConnect();
 
 describe("Updates triggered by scheduler", function() {
+
+  after(function() {
+    nock.cleanAll();
+  });
 
   describe("Updating a submodule", function() {
     let workingCopyRequest: Scope;

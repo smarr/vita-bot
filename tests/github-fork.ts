@@ -11,6 +11,10 @@ const github = GitHubAPI();
 disableNetConnect();
 
 describe("Managed repositories need to be forked", function() {
+  after(function() {
+    nock.cleanAll();
+  });
+
   let result: WorkingCopyResult;
 
   describe("No fork yet", function() {

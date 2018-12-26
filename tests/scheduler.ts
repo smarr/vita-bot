@@ -121,6 +121,10 @@ describe("Scheduler", function() {
       .reply(200, createUserRepos);
   });
 
+  after(function() {
+    nock.cleanAll();
+  });
+
   let scheduler: RepositoryScheduler;
   let repos: Map<GitHubInstallation, GitHubRepository[]>;
 

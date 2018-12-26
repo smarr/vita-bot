@@ -37,6 +37,9 @@ disableNetConnect();
 const github = GitHubAPI();
 
 describe("GitHub interaction", function() {
+  after(function() {
+    nock.cleanAll();
+  });
 
   describe("Submodule Update", function() {
     let updater: GitHubSubmoduleUpdate;
