@@ -40,6 +40,7 @@
   },
   "scripts": {
     "postinstall": "npm run compile",
+    "start": "probot run ./dist/src/app.js",
     "compile": "tsc",
     "format": "tsfmt -r",
     "verifyformat": "tsfmt --verify",

@@ -4,9 +4,18 @@ import { SchedulerPayload } from "./scheduler";
 import { UpdateSubmodule, GitHubSubmoduleUpdate } from "./update-ops";
 
 import { normalize } from "path";
-import { Context } from "probot";
+import { Context, Application } from "probot";
 
 export const REPO_ROOT = normalize(`${__dirname}/../../.base/working-copies`);
+
+export function setupWebInterface(app: Application) {
+  const router = app.route("/vita-bot");
+
+  // Add a new route
+  router.get("/", (_req, res) => {
+    res.send("Vita Bot is running: " + new Date().toUTCString());
+  });
+}
 
 export async function doUpdates(context: Context) {
   const payload: SchedulerPayload = context.payload;
