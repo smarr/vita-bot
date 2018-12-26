@@ -6,7 +6,6 @@ import { RSA_KEY, GITHUB_API } from "./test-data";
 
 disableNetConnect();
 
-
 const userInstallRegex = /\/user\/installations\/(\d+)\/repositories/;
 const installDetails = [
   {
@@ -84,24 +83,6 @@ function createUserRepos(uri: string) {
   };
 }
 
-nock(GITHUB_API)
-  .get("/app/installations")
-  .times(3)
-  .reply(200, createInstallations());
-
-nock(GITHUB_API)
-  .post(/\/app\/installations\/\d+\/access_tokens/)
-  .times(3 * 3)
-  .reply(201, {
-    "token": "v1.1f699f1069f60xxx",
-    "expires_at": "2016-07-11T22:14:10Z"
-  });
-
-nock(GITHUB_API)
-  .get(userInstallRegex)
-  .times(10 * 3)
-  .reply(200, createUserRepos);
-
 function createTestApp(app: Application) {
   // no op
 }
@@ -119,6 +100,26 @@ async function timeout(ms: number) {
 }
 
 describe("Scheduler", function() {
+
+  before(function() {
+    nock(GITHUB_API)
+      .get("/app/installations")
+      .times(3)
+      .reply(200, createInstallations());
+
+    nock(GITHUB_API)
+      .post(/\/app\/installations\/\d+\/access_tokens/)
+      .times(3 * 3)
+      .reply(201, {
+        "token": "v1.1f699f1069f60xxx",
+        "expires_at": "2016-07-11T22:14:10Z"
+      });
+
+    nock(GITHUB_API)
+      .get(userInstallRegex)
+      .times(10 * 3)
+      .reply(200, createUserRepos);
+  });
 
   let scheduler: RepositoryScheduler;
   let repos: Map<GitHubInstallation, GitHubRepository[]>;
