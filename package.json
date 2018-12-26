@@ -5,7 +5,9 @@
   "dependencies": {
     "@octokit/rest": "^15.18.0",
     "bottleneck": "^2.14.0",
+    "js-yaml": "^3.12.0",
     "probot": "^7.4.0",
+    "rimraf": "^2.6.2",
     "simple-git": "^1.107.0"
   },
   "devDependencies": {
@@ -18,10 +20,8 @@
     "@types/node": "^10.12.15",
     "@types/rimraf": "^2.0.2",
     "chai": "^4.2.0",
-    "js-yaml": "^3.12.0",
     "mocha": "^5.2.0",
     "nock": "^10.0.4",
-    "rimraf": "^2.6.2",
     "tslint": "^5.12.0",
     "typescript": "^3.2.2",
     "typescript-formatter": "^7.2.2"
