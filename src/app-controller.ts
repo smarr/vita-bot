@@ -13,6 +13,7 @@ export function setupWebInterface(app: Application) {
 
   // Add a new route
   router.get("/", (_req, res) => {
+    res.type("html");
     res.send("Vita Bot is running: " + new Date().toUTCString());
   });
 }
