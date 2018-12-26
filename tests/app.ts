@@ -28,6 +28,7 @@ const REPO_DEF = {
   "id": 2222,
   "name": REPO_NAME,
   "clone_url": TEST_ORIGINAL_CLONE_PATH,
+  "ssh_url": TEST_ORIGINAL_CLONE_PATH,
   "owner": {
     login: REPO_OWNER
   }
@@ -98,6 +99,7 @@ update-submodules:
           "name": REPO_NAME,
           "fork": true,
           "clone_url": TEST_BOT_REMOTE_PATH,
+          "ssh_url": TEST_BOT_REMOTE_PATH,
           "source": {
             "name": REPO_NAME,
             "owner": {

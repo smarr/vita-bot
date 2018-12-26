@@ -13,7 +13,7 @@ export async function doUpdates(context: Context) {
 
   const owner = payload.repository.owner.login;
   const repo = payload.repository.name;
-  const repoUrl = payload.repository.clone_url;
+  const cloneUrl = payload.repository.clone_url;
 
   const config = await getProjectConfig(context.github, owner, repo);
   if (config === null) {
@@ -26,7 +26,7 @@ export async function doUpdates(context: Context) {
     const githubCopy = new GithubWorkingCopy(owner, repo, context.github);
     const workingCopy = await githubCopy.ensureCopyInBotUser();
 
-    const updateSubmodule = new UpdateSubmodule(repoUrl, config["target-branch"],
+    const updateSubmodule = new UpdateSubmodule(cloneUrl, config["target-branch"],
       REPO_ROOT + "/" + workingCopy.repo, submodulePath, submodule, bot);
     const gitUpdateResult = await updateSubmodule.performUpdate();
 
@@ -38,9 +38,7 @@ export async function doUpdates(context: Context) {
       const branchName = existingBranch === null ?
         await githubUpdate.getBranchName(workingCopy) : existingBranch;
 
-      console.log("about to push branch");
-      console.assert(workingCopy.cloneUrl !== undefined && workingCopy.cloneUrl !== null);
-      await updateSubmodule.pushBranch(branchName, workingCopy.cloneUrl);
+      await updateSubmodule.pushBranch(branchName, workingCopy.sshUrl);
 
       await githubUpdate.proposeUpdate(branchName);
     } else {

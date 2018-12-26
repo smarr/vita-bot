@@ -11,6 +11,7 @@ export interface GithubRepo {
 export interface WorkingCopyResult extends GithubRepo {
   existingFork: boolean;
   cloneUrl: string;
+  sshUrl: string;
 }
 
 export class GithubWorkingCopy {
@@ -48,7 +49,8 @@ export class GithubWorkingCopy {
       existingFork: false,
       owner: bot.userId,
       repo: response.data.name,
-      cloneUrl: response.data.clone_url
+      cloneUrl: response.data.clone_url,
+      sshUrl: response.data.ssh_url
     });
   }
 
@@ -104,7 +106,8 @@ export class GithubWorkingCopy {
         existingFork: true,
         owner: bot.userId,
         repo: this.repo,
-        cloneUrl: botRepo.clone_url
+        cloneUrl: botRepo.clone_url,
+        sshUrl: botRepo.ssh_url
       });
     }
 
@@ -115,7 +118,8 @@ export class GithubWorkingCopy {
           existingFork: true,
           owner: bot.userId,
           repo: result.name,
-          cloneUrl: result.clone_url
+          cloneUrl: result.clone_url,
+          sshUrl: result.ssh_url
         });
       }
     }
