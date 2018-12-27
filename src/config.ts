@@ -8,6 +8,11 @@ import { GitHubAPI } from "probot/lib/github";
 const pkg = readFileSync(__dirname + "/../../package.json", { encoding: "utf-8" });
 export const bot: BotDetails = JSON.parse(pkg)["vita-bot"];
 
+export function getConfigFromYaml(data: string): BotConfig {
+  const config: BotConfig = yaml.safeLoad(data);
+  return config;
+}
+
 async function getConfig(github: GitHubAPI, owner: string,
   repo: string, branch: string): Promise<BotConfig | null> {
   const params: ReposGetContentsParams = {
@@ -37,7 +42,7 @@ async function getConfig(github: GitHubAPI, owner: string,
   }
 
   const data = Buffer.from(response.data.content, "base64").toString();
-  const config: BotConfig = yaml.safeLoad(data);
+  const config = getConfigFromYaml(data);
   return Promise.resolve(config);
 }
 

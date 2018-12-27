@@ -5,10 +5,14 @@ export interface Configuration {
   "vita-bot": BotConfig;
 }
 
-export interface BotConfig {
+export interface BotConfig extends BotBranchConfig, BotSubmoduleConfig {}
+
+interface BotBranchConfig {
   /** Tasks to update branches. */
   "update-branches": { [branchPattern: string]: UpdateBranchConfig };
+}
 
+interface BotSubmoduleConfig {
   /** Tasks to update submodules. */
   "update-submodules": { [submodulePath: string]: UpdateSubmoduleConfig };
 
@@ -17,6 +21,32 @@ export interface BotConfig {
    * This is also going to be the branch, against which pull requests will be created.
    */
   "target-branch": string;
+}
+
+export function isBotConfig(val: any): boolean {
+  let hasOne = false;
+  let valid = true;
+  if (val.hasOwnProperty("update-branches")) {
+    hasOne = true;
+    for (const key in val["update-branches"]) {
+      valid = valid && isBranchConfig(val["update-branches"][key]);
+      if (!valid) {
+        break;
+      }
+    }
+  }
+
+  if (val.hasOwnProperty("update-submodules")) {
+    hasOne = true;
+    for (const key in val["update-submodules"]) {
+      valid = valid && isSubmoduleConfig(val["update-submodules"][key]);
+      if (!valid) {
+        break;
+      }
+    }
+  }
+
+  return hasOne && valid;
 }
 
 /**
@@ -55,8 +85,19 @@ export interface UpdateBranchConfig {
   tags: string;
 }
 
+function isBranchConfig(val: any) {
+  return val.hasOwnProperty("url") &&
+    val.hasOwnProperty("branch") &&
+    val.hasOwnProperty("tags");
+}
+
 /** Defines a task to update the submodule of the given git repository. */
 export interface UpdateSubmoduleConfig {
   /** The branch that is checked for updates. */
   branch: string;
 }
+
+function isSubmoduleConfig(val: any) {
+  return val.hasOwnProperty("branch");
+}
+

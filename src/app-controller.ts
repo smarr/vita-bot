@@ -1,8 +1,10 @@
-import { getProjectConfig, bot } from "./config";
+import { getProjectConfig, bot, getConfigFromYaml } from "./config";
+import { isBotConfig } from "./config-schema";
 import { GithubWorkingCopy, GithubInstallations } from "./github";
 import { SchedulerPayload } from "./scheduler";
 import { UpdateSubmodule, GitHubSubmoduleUpdate } from "./update-ops";
 
+import bodyParser from "body-parser";
 import { Response, Request } from "express";
 import { normalize } from "path";
 import { Context, Application } from "probot";
@@ -40,14 +42,47 @@ export function setupWebInterface(app: Application) {
   });
 
   router.get("/config/:inst/:owner/:repo", async (req: Request, res: Response) => {
+    res.type("html");
     const config = await getProjectConfig(await app.auth(req.params.inst), req.params.owner, req.params.repo);
+
+    const valid = isBotConfig(config);
 
     let msg = `<html><body><h1>Configuration for ${req.params.owner}/${req.params.repo} (${new Date().toUTCString()}):</h1>`;
 
+    msg += `<h2>Valid: ${valid}</h2>`;
     msg += `<code><pre>${JSON.stringify(config)}</pre></code>`;
+
+    msg += `<a href="/viva-bot/validate">Validation Form to verify config format</a>`;
 
     msg += `</body></html>`;
 
+    res.send(msg);
+  });
+
+  router.get("/validate", (req: Request, res: Response) => {
+    res.type("html");
+    res.send(`<html><body><h1>Validate Configuration (${new Date().toUTCString()})</h1>
+    <form action="" method="post">
+    <textarea name="config"></textarea>
+    <input type="submit">
+    </form>
+    </body></html>`);
+  });
+
+  router.use(bodyParser.urlencoded({ extended: false }));
+  router.post("/validate", (req: Request, res: Response) => {
+    res.type("html");
+
+    const config = getConfigFromYaml(req.body.config);
+    const result = isBotConfig(config);
+
+    let msg = `<html><body><h1>Validate Configuration (${new Date().toUTCString()})</h1>
+    <h2>Result: ${result}</h2>
+    <form action="" method="post">
+    <textarea name="config">${req.body.config}</textarea>
+    <input type="submit">
+    </form>
+    </body></html>`;
     res.send(msg);
   });
 }
