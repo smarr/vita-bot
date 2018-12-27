@@ -28,7 +28,7 @@ export function setupWebInterface(app: Application) {
       msg += `Installation: <a href="${inst.html_url}">${inst.account.login}</a>`;
       msg += `<ul>`;
       for (const repo of repos) {
-        msg += `<li><a href="${repo.url}">${repo.name}</a> (<a href="/vita-bot/config/${repo.full_name}">config</a>)</li>`;
+        msg += `<li><a href="${repo.url}">${repo.name}</a> (<a href="/vita-bot/config/${inst.id}/${repo.full_name}">config</a>)</li>`;
       }
       msg += `</ul>`;
     }
@@ -39,8 +39,8 @@ export function setupWebInterface(app: Application) {
     res.send(msg);
   });
 
-  router.get("/config/:owner/:repo", async (req: Request, res: Response) => {
-    const config = await getProjectConfig(await app.auth(), req.params.owner, req.params.repo);
+  router.get("/config/:inst/:owner/:repo", async (req: Request, res: Response) => {
+    const config = await getProjectConfig(await app.auth(req.params.inst), req.params.owner, req.params.repo);
 
     let msg = `<html><body><h1>Configuration for ${req.params.owner}/${req.params.repo} (${new Date().toUTCString()}):</h1>`;
 
