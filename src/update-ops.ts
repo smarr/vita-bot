@@ -10,7 +10,7 @@ import { GitHubAPI } from "probot/lib/github";
 
 /** The standard git upstream remote name. */
 const UPSTREAM_REMOTE = "upstream";
-const WORKING_COPY_REMOTE = "workingcopy";
+const WORKING_COPY_REMOTE = "working-copy";
 
 export interface UpdateBranchResult {
   success: boolean;

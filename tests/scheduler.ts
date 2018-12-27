@@ -90,7 +90,7 @@ function createTestApp(app: Application) {
 const probot: Probot = new Probot({cert: RSA_KEY});
 const app = probot.load(createTestApp);
 
-let events: Context[] = [];
+const events: Context[] = [];
 app.on("schedule", async ctx => {
   events.push(ctx);
 });
@@ -162,10 +162,10 @@ describe("Scheduler", function() {
 
       expect(events.length).to.equal(4);
 
-      expect(events[0].payload.repository.full_name).to.equal("github/test");
-      expect(events[1].payload.repository.full_name).to.equal("smarr/SOMns");
-      expect(events[2].payload.repository.full_name).to.equal("smarr/truffle");
-      expect(events[3].payload.repository.full_name).to.equal("SOM-st/SOM");
+      expect(events[0].payload.repository.repo).to.equal("test");
+      expect(events[1].payload.repository.repo).to.equal("SOMns");
+      expect(events[2].payload.repository.repo).to.equal("truffle");
+      expect(events[3].payload.repository.repo).to.equal("SOM");
     });
   });
 

@@ -15,6 +15,6 @@ export = (app: Application) => {
   app.log.info("Web Interface setup");
 
   app.on("schedule.repository", async function(context) {
-    return doUpdates(context);
+    return doUpdates(context.github, context.payload.repository);
   });
 };

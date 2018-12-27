@@ -1,11 +1,10 @@
 import Bottleneck from "bottleneck";
 import { Application } from "probot";
-import { GithubInstallations, GitHubInstallation, GitHubRepository } from "./github";
+import { GithubInstallations, GitHubInstallation, GitHubRepository, WorkingCopyResult, GithubRepo } from "./github";
 
 export interface SchedulerPayload {
   action: "repository";
-  installation: GitHubInstallation;
-  repository: GitHubRepository;
+  repository: GithubRepo;
 }
 
 export class RepositoryScheduler {
@@ -96,12 +95,15 @@ export class RepositoryScheduler {
   private async scheduleRepositories(repoPromise: Promise<Map<GitHubInstallation, GitHubRepository[]>>, intervalId: number) {
     const repositories = await repoPromise;
 
-    for (const [installation, repos] of repositories.entries()) {
+    for (const [_installation, repos] of repositories.entries()) {
       for (const repo of repos) {
         const payload: SchedulerPayload = {
           action: "repository",
-          installation: installation,
-          repository: repo
+          repository: {
+            owner: repo.owner.login,
+            repo: repo.name,
+            cloneUrl: repo.clone_url
+          }
         };
         const repoUpdateEvent = {
           name: "schedule",

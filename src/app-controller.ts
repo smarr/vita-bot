@@ -87,14 +87,12 @@ export function setupWebInterface(app: Application) {
   });
 }
 
-export async function doUpdates(context: Context) {
-  const payload: SchedulerPayload = context.payload;
+export async function doUpdates(github: GitHubAPI, repository: GithubRepo) {
+  const owner = repository.owner;
+  const repo = repository.repo;
+  const cloneUrl = repository.cloneUrl!;
 
-  const owner = payload.repository.owner.login;
-  const repo = payload.repository.name;
-  const cloneUrl = payload.repository.clone_url;
-
-  const config = await getProjectConfig(context.github, owner, repo);
+  const config = await getProjectConfig(github, owner, repo);
   if (config === null) {
     return;
   }
@@ -102,7 +100,7 @@ export async function doUpdates(context: Context) {
   for (const submodulePath in config["update-submodules"]) {
     const submodule = config["update-submodules"][submodulePath];
 
-    const githubCopy = new GithubWorkingCopy(owner, repo, context.github);
+    const githubCopy = new GithubWorkingCopy(owner, repo, github);
     const workingCopy = await githubCopy.ensureCopyInBotUser();
 
     const updateSubmodule = new UpdateSubmodule(cloneUrl, config["target-branch"],
@@ -110,7 +108,7 @@ export async function doUpdates(context: Context) {
     const gitUpdateResult = await updateSubmodule.performUpdate();
 
     if (gitUpdateResult.success) {
-      const githubUpdate = new GitHubSubmoduleUpdate(context.github, owner,
+      const githubUpdate = new GitHubSubmoduleUpdate(github, owner,
         repo, gitUpdateResult.reportInfo, config["target-branch"]);
       const existingBranch = await githubUpdate.findExistingPullRequest();
 

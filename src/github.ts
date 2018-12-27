@@ -10,10 +10,10 @@ import { Application } from "probot";
 export interface GitHubRepository extends AppsListReposResponseRepositoriesItem { }
 export interface GitHubInstallation extends AppsListInstallationsResponseItem { }
 
-
 export interface GithubRepo {
   owner: string;
   repo: string;
+  cloneUrl?: string;
 }
 
 export interface WorkingCopyResult extends GithubRepo {
