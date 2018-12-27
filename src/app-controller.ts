@@ -1,8 +1,9 @@
 import { getProjectConfig, bot } from "./config";
-import { GithubWorkingCopy } from "./github";
+import { GithubWorkingCopy, GithubInstallations } from "./github";
 import { SchedulerPayload } from "./scheduler";
 import { UpdateSubmodule, GitHubSubmoduleUpdate } from "./update-ops";
 
+import { Response, Request } from "express";
 import { normalize } from "path";
 import { Context, Application } from "probot";
 
@@ -12,9 +13,42 @@ export function setupWebInterface(app: Application) {
   const router = app.route("/vita-bot");
 
   // Add a new route
-  router.get("/", (_req, res) => {
+  router.get("/", (_req: Request, res: Response) => {
     res.type("html");
     res.send("Vita Bot is running: " + new Date().toUTCString());
+  });
+
+  router.get("/repos", async (_req: Request, res: Response) => {
+    let msg = `<html><body><h1>Current installations (${new Date().toUTCString()}):</h1>`;
+
+    const installations = new GithubInstallations(app);
+    const result = await installations.requestRepositories();
+
+    for (const [inst, repos] of result.entries()) {
+      msg += `Installation: <a href="${inst.html_url}">${inst.account.login}</a>`;
+      msg += `<ul>`;
+      for (const repo of repos) {
+        msg += `<li><a href="${repo.url}">${repo.name}</a> (<a href="/vita-bot/config/${repo.full_name}">config</a>)</li>`;
+      }
+      msg += `</ul>`;
+    }
+
+    res.type("html");
+
+    msg += `</body></html>`;
+    res.send(msg);
+  });
+
+  router.get("/config/:owner/:repo", async (req: Request, res: Response) => {
+    const config = await getProjectConfig(await app.auth(), req.params.owner, req.params.repo);
+
+    let msg = `<html><body><h1>Configuration for ${req.params.owner}/${req.params.repo} (${new Date().toUTCString()}):</h1>`;
+
+    msg += `<code><pre>${JSON.stringify(config)}</pre></code>`;
+
+    msg += `</body></html>`;
+
+    res.send(msg);
   });
 }
 
