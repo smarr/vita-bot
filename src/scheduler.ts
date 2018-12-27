@@ -1,13 +1,6 @@
 import Bottleneck from "bottleneck";
-import {
-  AppsListInstallationsResponseItem,
-  AppsListInstallationReposForAuthenticatedUserResponse,
-  AppsListInstallationReposForAuthenticatedUserResponseRepositoriesItem
-} from "@octokit/rest";
 import { Application } from "probot";
-
-export interface GitHubRepository extends AppsListInstallationReposForAuthenticatedUserResponseRepositoriesItem { }
-export interface GitHubInstallation extends AppsListInstallationsResponseItem { }
+import { GithubInstallations, GitHubInstallation, GitHubRepository } from "./github";
 
 export interface SchedulerPayload {
   action: "repository";
@@ -19,9 +12,10 @@ export class RepositoryScheduler {
 
   private readonly requestScheduler?: Bottleneck;
   private readonly app: Application;
-  private readonly repositories: Map<GitHubInstallation, GitHubRepository[]>;
 
   private readonly checkInterval: number;
+
+  private readonly installations: GithubInstallations;
 
   private interval?: NodeJS.Timeout | false;
 
@@ -36,7 +30,7 @@ export class RepositoryScheduler {
    */
   constructor(app: Application, checkInterval: number, requestsPerSecond: number) {
     this.app = app;
-    this.repositories = new Map();
+    this.installations = new GithubInstallations(app);
     this.checkInterval = checkInterval * 1000;
 
     this.lastIntervalId = -1;
@@ -66,12 +60,12 @@ export class RepositoryScheduler {
       throw new Error("Scheduler.start() can only be executed once");
     }
 
-    const gotRepositories = this.requestRepositories();
+    const repoPromise = this.installations.requestRepositories();
 
     // execute once directly
     this.interval = false;
     this.lastIntervalId += 1;
-    this.lastInterval = this.scheduleRepositories(gotRepositories, this.lastIntervalId);
+    this.lastInterval = this.scheduleRepositories(repoPromise, this.lastIntervalId);
 
     // but if we have a non-zero interval, then also register the interval
     if (this.checkInterval !== 0) {
@@ -82,10 +76,10 @@ export class RepositoryScheduler {
             return;
           }
           this.lastIntervalId += 1;
-          this.lastInterval = this.scheduleRepositories(gotRepositories, this.lastIntervalId);
+          this.lastInterval = this.scheduleRepositories(repoPromise, this.lastIntervalId);
         }, this.checkInterval);
     }
-    return gotRepositories;
+    return repoPromise;
   }
 
   public stop() {
@@ -95,54 +89,14 @@ export class RepositoryScheduler {
   }
 
   private initApp() {
+
   }
 
-  private async getInstallations(): Promise<GitHubInstallation[]> {
-    const github = await this.app.auth();
-    const request = github.apps.listInstallations({});
 
-    const results: GitHubInstallation[] = [];
+  private async scheduleRepositories(repoPromise: Promise<Map<GitHubInstallation, GitHubRepository[]>>, intervalId: number) {
+    const repositories = await repoPromise;
 
-    await github.paginate(request, async (page) => {
-      const installations: AppsListInstallationsResponseItem[] = (await page).data;
-      for (const installation of installations) {
-        results.push(installation);
-      }
-    });
-
-    return Promise.resolve(results);
-  }
-
-  private async getRepositories(installation: AppsListInstallationsResponseItem): Promise<GitHubRepository[]> {
-    const github = await this.app.auth(installation.id);
-
-    const request = github.apps.listInstallationReposForAuthenticatedUser({ installation_id: installation.id });
-
-    const results: GitHubRepository[] = [];
-    await github.paginate(request, async (page) => {
-      const response: AppsListInstallationReposForAuthenticatedUserResponse = (await page).data;
-      for (const repo of response.repositories) {
-        results.push(repo);
-      }
-    });
-
-    return Promise.resolve(results);
-  }
-
-  private async requestRepositories(): Promise<Map<GitHubInstallation, GitHubRepository[]>> {
-    const installations = await this.getInstallations();
-    for (const inst of installations) {
-      const repositories = await this.getRepositories(inst);
-      this.repositories.set(inst, repositories);
-    }
-
-    return Promise.resolve(this.repositories);
-  }
-
-  private async scheduleRepositories(gotRepositories: Promise<any>, intervalId: number) {
-    await gotRepositories;
-
-    for (const [installation, repos] of this.repositories.entries()) {
+    for (const [installation, repos] of repositories.entries()) {
       for (const repo of repos) {
         const payload: SchedulerPayload = {
           action: "repository",

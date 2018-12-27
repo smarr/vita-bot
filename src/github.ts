@@ -1,7 +1,15 @@
 import { bot } from "./config";
 
-import { ReposGetResponse, ReposCreateForkParams, ReposListForOrgParams, ReposListForOrgResponseItem } from "@octokit/rest";
+import { ReposGetResponse, ReposCreateForkParams, ReposListForOrgParams,
+  ReposListForOrgResponseItem, AppsListInstallationsResponseItem,
+  AppsListInstallationReposForAuthenticatedUserResponse,
+  AppsListInstallationReposForAuthenticatedUserResponseRepositoriesItem } from "@octokit/rest";
 import { GitHubAPI } from "probot/lib/github";
+import { Application } from "probot";
+
+export interface GitHubRepository extends AppsListInstallationReposForAuthenticatedUserResponseRepositoriesItem { }
+export interface GitHubInstallation extends AppsListInstallationsResponseItem { }
+
 
 export interface GithubRepo {
   owner: string;
@@ -12,6 +20,59 @@ export interface WorkingCopyResult extends GithubRepo {
   existingFork: boolean;
   cloneUrl: string;
   sshUrl: string;
+}
+
+export class GithubInstallations {
+
+  private readonly app: Application;
+  private readonly repositories: Map<GitHubInstallation, GitHubRepository[]>;
+
+  constructor(app: Application) {
+    this.app = app;
+    this.repositories = new Map();
+  }
+
+  private async getInstallations(): Promise<GitHubInstallation[]> {
+    const github = await this.app.auth();
+    const request = github.apps.listInstallations({});
+
+    const results: GitHubInstallation[] = [];
+
+    await github.paginate(request, async (page) => {
+      const installations: AppsListInstallationsResponseItem[] = (await page).data;
+      for (const installation of installations) {
+        results.push(installation);
+      }
+    });
+
+    return Promise.resolve(results);
+  }
+
+  private async getRepositories(installation: GitHubInstallation): Promise<GitHubRepository[]> {
+    const github = await this.app.auth(installation.id);
+
+    const request = github.apps.listInstallationReposForAuthenticatedUser({ installation_id: installation.id });
+
+    const results: GitHubRepository[] = [];
+    await github.paginate(request, async (page) => {
+      const response: AppsListInstallationReposForAuthenticatedUserResponse = (await page).data;
+      for (const repo of response.repositories) {
+        results.push(repo);
+      }
+    });
+
+    return Promise.resolve(results);
+  }
+
+  public async requestRepositories(): Promise<Map<GitHubInstallation, GitHubRepository[]>> {
+    const installations = await this.getInstallations();
+    for (const inst of installations) {
+      const repositories = await this.getRepositories(inst);
+      this.repositories.set(inst, repositories);
+    }
+
+    return Promise.resolve(this.repositories);
+  }
 }
 
 export class GithubWorkingCopy {

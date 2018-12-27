@@ -1,8 +1,9 @@
 import nock, { disableNetConnect } from "nock";
 import { Application, Probot, Context } from "probot";
-import { RepositoryScheduler, GitHubInstallation, GitHubRepository } from "../src/scheduler";
+import { RepositoryScheduler } from "../src/scheduler";
 import { expect } from "chai";
 import { RSA_KEY, GITHUB_API } from "./test-data";
+import { GitHubInstallation, GitHubRepository } from "../src/github";
 
 disableNetConnect();
 
