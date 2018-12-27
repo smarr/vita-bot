@@ -1,6 +1,6 @@
 import { getProjectConfig, bot, getConfigFromYaml } from "./config";
 import { isBotConfig } from "./config-schema";
-import { GithubWorkingCopy, GithubInstallations } from "./github";
+import { GithubWorkingCopy, GithubInstallations, WorkingCopyResult, GithubRepo } from "./github";
 import { SchedulerPayload } from "./scheduler";
 import { UpdateSubmodule, GitHubSubmoduleUpdate } from "./update-ops";
 
@@ -8,6 +8,7 @@ import bodyParser from "body-parser";
 import { Response, Request } from "express";
 import { normalize } from "path";
 import { Context, Application } from "probot";
+import { GitHubAPI } from "probot/lib/github";
 
 export const REPO_ROOT = normalize(`${__dirname}/../../.base/working-copies`);
 
@@ -43,20 +44,49 @@ export function setupWebInterface(app: Application) {
 
   router.get("/config/:inst/:owner/:repo", async (req: Request, res: Response) => {
     res.type("html");
-    const config = await getProjectConfig(await app.auth(req.params.inst), req.params.owner, req.params.repo);
+    const inst = req.params.inst;
+    const owner = req.params.owner;
+    const repo = req.params.repo;
+    const config = await getProjectConfig(await app.auth(inst), owner, repo);
 
     const valid = isBotConfig(config);
 
-    let msg = `<html><body><h1>Configuration for ${req.params.owner}/${req.params.repo} (${new Date().toUTCString()}):</h1>`;
+    let msg = `<html><body><h1>Configuration for ${owner}/${repo} (${new Date().toUTCString()}):</h1>`;
 
     msg += `<h2>Valid: ${valid}</h2>`;
     msg += `<code><pre>${JSON.stringify(config)}</pre></code>`;
 
-    msg += `<a href="/viva-bot/validate">Validation Form to verify config format</a>`;
+    msg += `<ul>
+      <li><a href="/vita-bot/process/${inst}/${owner}/${repo}">Process update job</a></li>
+      <li><a href="/viva-bot/validate">Validation Form to verify config format</a></li>
+      </ul>`;
 
     msg += `</body></html>`;
 
     res.send(msg);
+  });
+
+  router.get("/process/:inst/:owner/:repo", async (req: Request, res: Response) => {
+    res.type("html");
+
+    const inst = req.params.inst;
+    const owner = req.params.owner;
+    const repo = req.params.repo;
+
+    let msg = `<html><body><h1>Started Updates for for ${owner}/${repo} (${new Date().toUTCString()}):</h1>`;
+    msg += `</body></html>`;
+    res.send(msg);
+
+    const github = await app.auth(inst);
+
+    const repoDetails: GithubRepo = {
+      owner: owner,
+      repo: repo
+    };
+    const repoFullDetails = await github.repos.get(repoDetails);
+    repoDetails.cloneUrl = repoFullDetails.data.clone_url;
+
+    doUpdates(github, repoDetails);
   });
 
   router.get("/validate", (req: Request, res: Response) => {
