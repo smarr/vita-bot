@@ -24,6 +24,10 @@ interface BotSubmoduleConfig {
 }
 
 export function isBotConfig(val: any): boolean {
+  if (val === undefined || val === null || typeof val !== "object") {
+    return false;
+  }
+
   let hasOne = false;
   let valid = true;
   if (val.hasOwnProperty("update-branches")) {
