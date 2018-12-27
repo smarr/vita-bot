@@ -2,12 +2,12 @@ import { bot } from "./config";
 
 import { ReposGetResponse, ReposCreateForkParams, ReposListForOrgParams,
   ReposListForOrgResponseItem, AppsListInstallationsResponseItem,
-  AppsListInstallationReposForAuthenticatedUserResponse,
-  AppsListInstallationReposForAuthenticatedUserResponseRepositoriesItem } from "@octokit/rest";
+  AppsListReposResponse,
+  AppsListReposResponseRepositoriesItem } from "@octokit/rest";
 import { GitHubAPI } from "probot/lib/github";
 import { Application } from "probot";
 
-export interface GitHubRepository extends AppsListInstallationReposForAuthenticatedUserResponseRepositoriesItem { }
+export interface GitHubRepository extends AppsListReposResponseRepositoriesItem { }
 export interface GitHubInstallation extends AppsListInstallationsResponseItem { }
 
 
@@ -51,11 +51,11 @@ export class GithubInstallations {
   private async getRepositories(installation: GitHubInstallation): Promise<GitHubRepository[]> {
     const github = await this.app.auth(installation.id);
 
-    const request = github.apps.listInstallationReposForAuthenticatedUser({ installation_id: installation.id });
+    const request = github.apps.listRepos({});
 
     const results: GitHubRepository[] = [];
     await github.paginate(request, async (page) => {
-      const response: AppsListInstallationReposForAuthenticatedUserResponse = (await page).data;
+      const response: AppsListReposResponse = (await page).data;
       for (const repo of response.repositories) {
         results.push(repo);
       }

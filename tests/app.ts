@@ -71,7 +71,7 @@ describe("Updates triggered by scheduler", function() {
           "expires_at": "2016-07-11T22:14:10Z"
         });
       nock(GITHUB_API)
-        .get("/user/installations/100/repositories")
+        .get("/installation/repositories")
         .reply(200, {
             "total_count": 1,
             "repositories": [REPO_DEF]

@@ -7,7 +7,6 @@ import { GitHubInstallation, GitHubRepository } from "../src/github";
 
 disableNetConnect();
 
-const userInstallRegex = /\/user\/installations\/(\d+)\/repositories/;
 const installDetails = [
   {
     installId: 1,
@@ -52,13 +51,13 @@ function createInstallations() {
   return installs;
 }
 
-function createUserRepos(uri: string) {
-  const match = userInstallRegex.exec(uri);
-  if (match === null) {
-    return {};
-  }
-  const accountId = parseInt(match[1]);
-  const instDetail = installDetails[accountId - 1];
+let createUserReposCount = 0;
+
+function createUserRepos() {
+  const accountId = createUserReposCount;
+  createUserReposCount += 1;
+  if (createUserReposCount >= 3) { createUserReposCount = 0; }
+  const instDetail = installDetails[accountId];
 
   const repoDetails: any[] = [];
   for (const repo of instDetail.repos) {
@@ -117,7 +116,7 @@ describe("Scheduler", function() {
       });
 
     nock(GITHUB_API)
-      .get(userInstallRegex)
+      .get("/installation/repositories")
       .times(10 * 3)
       .reply(200, createUserRepos);
   });
