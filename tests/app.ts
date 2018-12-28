@@ -62,12 +62,29 @@ describe("Updates triggered by scheduler", function() {
           "id": 100,
           "app_id": 111,
           "target_id": 112,
-          "target_type": "Organization"
+          "target_type": "Organization",
+          "account": {
+            "login": REPO_OWNER
+          }
+        }, {
+          "id": 101,
+          "app_id": 111,
+          "target_id": 113,
+          "target_type": "Organization",
+          "account": {
+            "login": bot.userId
+          }
         }]);
       nock(GITHUB_API)
         .post("/app/installations/100/access_tokens")
         .reply(201, {
-          "token": "v1.1f699f1069f60xxx",
+          "token": "inst-100",
+          "expires_at": "2016-07-11T22:14:10Z"
+        });
+        nock(GITHUB_API)
+        .post("/app/installations/101/access_tokens")
+        .reply(201, {
+          "token": "inst-101-bot",
           "expires_at": "2016-07-11T22:14:10Z"
         });
       nock(GITHUB_API)
@@ -75,6 +92,12 @@ describe("Updates triggered by scheduler", function() {
         .reply(200, {
             "total_count": 1,
             "repositories": [REPO_DEF]
+          });
+      nock(GITHUB_API)
+        .get("/installation/repositories")
+        .reply(200, {
+            "total_count": 0,
+            "repositories": []
           });
       nock(GITHUB_API)
         .get("/repos/" + REPO_OWNER + "/" + REPO_NAME + "/contents/.github/config.yml?ref=dev")
@@ -120,7 +143,10 @@ update-submodules:
         }, finalRequestFakeHeader);
 
       const probot: Probot = new Probot({cert: RSA_KEY});
-      probot.load(createApp);
+      const app = probot.load(createApp);
+      app.receive({
+        name: "schedule",
+        payload: { action: "start" }});
       await allCompleted;
     });
 

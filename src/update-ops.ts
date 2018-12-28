@@ -236,7 +236,7 @@ export interface UpdateResult {
 }
 
 export class GitHubSubmoduleUpdate {
-  private readonly github: GitHubAPI;
+  private readonly ownerGitHub: GitHubAPI;
   private readonly owner: string;
   private readonly repo: string;
   private readonly updateReport: UpdateSubmoduleReport;
@@ -247,9 +247,9 @@ export class GitHubSubmoduleUpdate {
   /**
    * @param targetBranch the name of the branch against which the PR is created
    */
-  constructor(github: GitHubAPI, owner: string, repo: string,
+  constructor(ownerGitHub: GitHubAPI, owner: string, repo: string,
     updateReport: UpdateSubmoduleReport, targetBranch: string) {
-    this.github = github;
+    this.ownerGitHub = ownerGitHub;
     this.owner = owner;
     this.repo = repo;
     this.updateReport = updateReport;
@@ -269,10 +269,10 @@ export class GitHubSubmoduleUpdate {
   }
 
   private async getBranches(repo: GithubRepo): Promise<string[]> {
-    const request = this.github.repos.listBranches({owner: repo.owner, repo: repo.repo});
+    const request = this.ownerGitHub.repos.listBranches({owner: repo.owner, repo: repo.repo});
 
     const results: string[] = [];
-    await this.github.paginate(request, async (page) => {
+    await this.ownerGitHub.paginate(request, async (page) => {
       const branches: ReposListBranchesResponseItem[] = (await page).data;
       for (const branch of branches) {
         results.push(branch.name);
@@ -319,8 +319,8 @@ export class GitHubSubmoduleUpdate {
 
     let result: PullRequestsListResponseItem | null = null;
 
-    const request = this.github.pullRequests.list(search);
-    await this.github.paginate(request, async (page, done) => {
+    const request = this.ownerGitHub.pullRequests.list(search);
+    await this.ownerGitHub.paginate(request, async (page, done) => {
       const pullRequests: PullRequestsListResponseItem[] = (await page).data;
 
       for (const pr of pullRequests) {
@@ -380,7 +380,7 @@ Using branch:     ${this.updateReport.submodule.updateBranch}
         body: msg,
         maintainer_can_modify: true
       };
-      const prResult = await this.github.pullRequests.create(request);
+      const prResult = await this.ownerGitHub.pullRequests.create(request);
 
       const result: UpdateResult = {
         updatedExisting: false,
@@ -396,7 +396,7 @@ Using branch:     ${this.updateReport.submodule.updateBranch}
         number: this.existingPullRequest.number,
         body: msg
       };
-      const cmtResult = await this.github.issues.createComment(request);
+      const cmtResult = await this.ownerGitHub.issues.createComment(request);
       const result: UpdateResult = {
         updatedExisting: true,
         existingId: this.existingPullRequest.number,

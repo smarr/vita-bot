@@ -4,8 +4,8 @@ import { ReposGetResponse, ReposCreateForkParams, ReposListForOrgParams,
   ReposListForOrgResponseItem, AppsListInstallationsResponseItem,
   AppsListReposResponse,
   AppsListReposResponseRepositoriesItem } from "@octokit/rest";
-import { GitHubAPI } from "probot/lib/github";
 import { Application } from "probot";
+import { GitHubAPI } from "probot/lib/github";
 
 export interface GitHubRepository extends AppsListReposResponseRepositoriesItem { }
 export interface GitHubInstallation extends AppsListInstallationsResponseItem { }
@@ -25,11 +25,25 @@ export interface WorkingCopyResult extends GithubRepo {
 export class GithubInstallations {
 
   private readonly app: Application;
-  private readonly repositories: Map<GitHubInstallation, GitHubRepository[]>;
+
+  private readonly repositories: Promise<Map<GitHubInstallation, GitHubRepository[]>>;
+  private repoResolver!: (value: Map<GitHubInstallation, GitHubRepository[]>) => void;
+
+  private readonly botInstallation: Promise<GitHubInstallation>;
+  private botInstallationResolver!: (value: GitHubInstallation) => void;
+
+  private dataRequested = false;
 
   constructor(app: Application) {
     this.app = app;
-    this.repositories = new Map();
+
+    this.repositories = new Promise((resolve, _reject) => {
+      this.repoResolver = resolve;
+    });
+
+    this.botInstallation = new Promise((resolve, _reject) => {
+      this.botInstallationResolver = resolve;
+    });
   }
 
   private async getInstallations(): Promise<GitHubInstallation[]> {
@@ -41,6 +55,9 @@ export class GithubInstallations {
     await github.paginate(request, async (page) => {
       const installations: AppsListInstallationsResponseItem[] = (await page).data;
       for (const installation of installations) {
+        if (installation.account.login === bot.userId) {
+          this.botInstallationResolver(installation);
+        }
         results.push(installation);
       }
     });
@@ -65,30 +82,47 @@ export class GithubInstallations {
   }
 
   public async requestRepositories(): Promise<Map<GitHubInstallation, GitHubRepository[]>> {
-    const installations = await this.getInstallations();
-    for (const inst of installations) {
-      const repositories = await this.getRepositories(inst);
-      this.repositories.set(inst, repositories);
+    if (!this.dataRequested) {
+      this.dataRequested = true;
+
+      const installations = await this.getInstallations();
+
+      const repositories: Map<GitHubInstallation, GitHubRepository[]> = new Map();
+      for (const inst of installations) {
+        const repos = await this.getRepositories(inst);
+        repositories.set(inst, repos);
+      }
+
+      this.repoResolver(repositories);
     }
 
-    return Promise.resolve(this.repositories);
+    return this.repositories;
+  }
+
+  public async getBotInstallation() {
+    if (!this.dataRequested) {
+      this.requestRepositories();
+    }
+    return this.botInstallation;
   }
 }
 
 export class GithubWorkingCopy {
   private readonly owner: string;
   private readonly repo: string;
-  private readonly github: GitHubAPI;
+  private readonly ownerGitHub: GitHubAPI;
+  private readonly botGitHub: GitHubAPI;
 
-  constructor(owner: string, repo: string, github: GitHubAPI) {
+  constructor(owner: string, repo: string, ownerGitHub: GitHubAPI, botGitHub: GitHubAPI) {
     this.owner = owner;
     this.repo = repo;
-    this.github = github;
+    this.ownerGitHub = ownerGitHub;
+    this.botGitHub = botGitHub;
   }
 
-  private async getRepo(owner: string, repo: string): Promise<ReposGetResponse | null> {
+  private async getRepo(owner: string, repo: string, github: GitHubAPI): Promise<ReposGetResponse | null> {
     try {
-      const result = await this.github.repos.get({owner: owner, repo: repo});
+      const result = await github.repos.get({owner: owner, repo: repo});
       return Promise.resolve(result.data);
     } catch (e) {
       if (e.name === "HttpError" && e.code === 404) {
@@ -105,7 +139,7 @@ export class GithubWorkingCopy {
       repo: repo,
       organization: bot.userId
     };
-    const response = await this.github.repos.createFork(params);
+    const response = await this.botGitHub.repos.createFork(params);
     return Promise.resolve({
       existingFork: false,
       owner: bot.userId,
@@ -123,13 +157,13 @@ export class GithubWorkingCopy {
 
     let result: ReposGetResponse | null = null;
 
-    const request = this.github.repos.listForOrg(params);
-    await this.github.paginate(request, async (page, done) => {
+    const request = this.botGitHub.repos.listForOrg(params);
+    await this.botGitHub.paginate(request, async (page, done) => {
       const repos: ReposListForOrgResponseItem[] = (await page).data;
 
       for (const repo of repos) {
         if (repo.name.startsWith(this.repo) && repo.name !== this.repo) {
-          const repoDetails = <ReposGetResponse> await this.getRepo(bot.userId, repo.name);
+          const repoDetails = <ReposGetResponse> await this.getRepo(bot.userId, repo.name, this.botGitHub);
           if (repoDetails.source.name === sourceRepo && repoDetails.source.owner.login === sourceOwner) {
             result = repoDetails;
 
@@ -144,7 +178,7 @@ export class GithubWorkingCopy {
   }
 
   public async ensureCopyInBotUser(): Promise<WorkingCopyResult> {
-    const targetRepo = await this.getRepo(this.owner, this.repo);
+    const targetRepo = await this.getRepo(this.owner, this.repo, this.ownerGitHub);
 
     if (targetRepo === null) {
       throw Error("Requested repository not found: " + this.owner + "/" + this.repo);
@@ -159,7 +193,7 @@ export class GithubWorkingCopy {
       sourceOwner = this.owner;
       sourceRepo = this.repo;
     }
-    const botRepo = await this.getRepo(bot.userId, this.repo);
+    const botRepo = await this.getRepo(bot.userId, this.repo, this.botGitHub);
 
     if (botRepo !== null && botRepo.fork && botRepo.source.owner.login === sourceOwner && botRepo.source.name) {
       // got a repo, with a common source

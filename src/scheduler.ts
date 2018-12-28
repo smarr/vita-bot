@@ -54,6 +54,14 @@ export class RepositoryScheduler {
     return this.lastInterval;
   }
 
+  public async getBotInstallation() {
+    return this.installations.getBotInstallation();
+  }
+
+  public async getRepositories() {
+    return this.installations.requestRepositories();
+  }
+
   public async start(): Promise<Map<GitHubInstallation, GitHubRepository[]>> {
     if (this.interval !== undefined) {
       throw new Error("Scheduler.start() can only be executed once");

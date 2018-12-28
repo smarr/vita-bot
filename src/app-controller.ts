@@ -1,7 +1,7 @@
 import { getProjectConfig, bot, getConfigFromYaml } from "./config";
 import { isBotConfig } from "./config-schema";
 import { GithubWorkingCopy, GithubInstallations, WorkingCopyResult, GithubRepo } from "./github";
-import { SchedulerPayload } from "./scheduler";
+import { SchedulerPayload, RepositoryScheduler } from "./scheduler";
 import { UpdateSubmodule, GitHubSubmoduleUpdate } from "./update-ops";
 
 import bodyParser from "body-parser";
@@ -12,7 +12,7 @@ import { GitHubAPI } from "probot/lib/github";
 
 export const REPO_ROOT = normalize(`${__dirname}/../../.base/working-copies`);
 
-export function setupWebInterface(app: Application) {
+export function setupWebInterface(app: Application, updater: RepositoryScheduler) {
   const router = app.route("/vita-bot");
 
   // Add a new route
@@ -24,8 +24,7 @@ export function setupWebInterface(app: Application) {
   router.get("/repos", async (_req: Request, res: Response) => {
     let msg = `<html><body><h1>Current installations (${new Date().toUTCString()}):</h1>`;
 
-    const installations = new GithubInstallations(app);
-    const result = await installations.requestRepositories();
+    const result = await updater.getRepositories();
 
     for (const [inst, repos] of result.entries()) {
       msg += `Installation: <a href="${inst.html_url}">${inst.account.login}</a>`;
@@ -69,24 +68,25 @@ export function setupWebInterface(app: Application) {
   router.get("/process/:inst/:owner/:repo", async (req: Request, res: Response) => {
     res.type("html");
 
-    const inst = req.params.inst;
-    const owner = req.params.owner;
-    const repo = req.params.repo;
+    const inst: number = parseInt(req.params.inst);
+    const owner: string = req.params.owner;
+    const repo: string = req.params.repo;
 
     let msg = `<html><body><h1>Started Updates for for ${owner}/${repo} (${new Date().toUTCString()}):</h1>`;
     msg += `</body></html>`;
     res.send(msg);
 
-    const github = await app.auth(inst);
+    const ownerGithub = await app.auth(inst);
 
     const repoDetails: GithubRepo = {
       owner: owner,
       repo: repo
     };
-    const repoFullDetails = await github.repos.get(repoDetails);
+    const repoFullDetails = await ownerGithub.repos.get(repoDetails);
     repoDetails.cloneUrl = repoFullDetails.data.clone_url;
 
-    doUpdates(github, repoDetails);
+    const botInst = await updater.getBotInstallation();
+    doUpdates(repoDetails, ownerGithub, await app.auth(botInst.id));
   });
 
   router.get("/validate", (req: Request, res: Response) => {
@@ -117,12 +117,12 @@ export function setupWebInterface(app: Application) {
   });
 }
 
-export async function doUpdates(github: GitHubAPI, repository: GithubRepo) {
-  const owner = repository.owner;
-  const repo = repository.repo;
-  const cloneUrl = repository.cloneUrl!;
+export async function doUpdates(repository: GithubRepo, ownerGitHub: GitHubAPI, botGitHub: GitHubAPI) {
+  const owner: string = repository.owner;
+  const repo: string = repository.repo;
+  const cloneUrl: string = repository.cloneUrl!;
 
-  const config = await getProjectConfig(github, owner, repo);
+  const config = await getProjectConfig(ownerGitHub, owner, repo);
   if (config === null) {
     return;
   }
@@ -130,7 +130,7 @@ export async function doUpdates(github: GitHubAPI, repository: GithubRepo) {
   for (const submodulePath in config["update-submodules"]) {
     const submodule = config["update-submodules"][submodulePath];
 
-    const githubCopy = new GithubWorkingCopy(owner, repo, github);
+    const githubCopy = new GithubWorkingCopy(owner, repo, ownerGitHub, botGitHub);
     const workingCopy = await githubCopy.ensureCopyInBotUser();
 
     const updateSubmodule = new UpdateSubmodule(cloneUrl, config["target-branch"],
@@ -138,7 +138,7 @@ export async function doUpdates(github: GitHubAPI, repository: GithubRepo) {
     const gitUpdateResult = await updateSubmodule.performUpdate();
 
     if (gitUpdateResult.success) {
-      const githubUpdate = new GitHubSubmoduleUpdate(github, owner,
+      const githubUpdate = new GitHubSubmoduleUpdate(ownerGitHub, owner,
         repo, gitUpdateResult.reportInfo, config["target-branch"]);
       const existingBranch = await githubUpdate.findExistingPullRequest();
 

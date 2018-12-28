@@ -40,7 +40,7 @@ describe("Managed repositories need to be forked", function() {
           "name": "SOMns"
         });
 
-      const workingCopy = new GithubWorkingCopy("smarr", "SOMns", github);
+      const workingCopy = new GithubWorkingCopy("smarr", "SOMns", github, github);
       result = await workingCopy.ensureCopyInBotUser();
     });
 
@@ -78,7 +78,7 @@ describe("Managed repositories need to be forked", function() {
           }
         });
 
-      const workingCopy = new GithubWorkingCopy("smarr", "SOMns", github);
+      const workingCopy = new GithubWorkingCopy("smarr", "SOMns", github, github);
       result = await workingCopy.ensureCopyInBotUser();
     });
 
@@ -120,7 +120,7 @@ describe("Managed repositories need to be forked", function() {
             "name": "SOMns-1"
           });
 
-        const workingCopy = new GithubWorkingCopy("smarr", "SOMns", github);
+        const workingCopy = new GithubWorkingCopy("smarr", "SOMns", github, github);
         result = await workingCopy.ensureCopyInBotUser();
       });
 
@@ -166,7 +166,7 @@ describe("Managed repositories need to be forked", function() {
             }
           });
 
-        const workingCopy = new GithubWorkingCopy("smarr", "SOMns", github);
+        const workingCopy = new GithubWorkingCopy("smarr", "SOMns", github, github);
         result = await workingCopy.ensureCopyInBotUser();
       });
 
