@@ -145,7 +145,15 @@ export async function doUpdates(repository: GithubRepo, ownerGitHub: GitHubAPI, 
       const branchName = existingBranch === null ?
         await githubUpdate.getBranchName(workingCopy) : existingBranch;
 
-      await updateSubmodule.pushBranch(branchName, workingCopy.sshUrl);
+      const url = new URL(workingCopy.cloneUrl);
+      url.username = bot.gitUserId;
+
+      if (process.env.PUSH_KEY !== undefined) {
+        url.password = process.env.PUSH_KEY;
+      } else {
+        throw new Error("Please configure a PUSH_KEY, a GitHub OAuth key, to be able to push updates to the bot repo");
+      }
+      await updateSubmodule.pushBranch(branchName, url.toString());
 
       await githubUpdate.proposeUpdate(branchName);
     } else {

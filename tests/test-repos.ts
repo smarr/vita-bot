@@ -40,6 +40,7 @@ export const TEST_BOT: BotDetails = {
   name: "Test Bot",
   email: "test@example.org",
   userId: "test-bot",
+  gitUserId: "test-bot",
   "config-branches": ["dev", "master"]
 };
 

@@ -67,6 +67,9 @@ export interface BotDetails {
   /** GitHub user id corresponding to the bot. */
   userId: string;
 
+  /** User id used for pushing to repositories. */
+  gitUserId: string;
+
   /**
    * Branches to be queried for bot configurations.
    * The branches will be queried in order and the first found config is used.

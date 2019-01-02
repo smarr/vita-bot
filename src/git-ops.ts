@@ -11,13 +11,6 @@ export function setAuthorInfo(repo: SimpleGit, authorName: string, authorEmail: 
   repo.env("GIT_COMMITTER_EMAIL", authorEmail);
 }
 
-function initSSHKey(repo: SimpleGit) {
-  if (process.env.SSH_VITA_BOT_KEY) {
-    repo.env("GIT_SSH_COMMAND", `ssh -i ${__dirname}/../../vita-bot-key`);
-    console.log("SSH_VITA_BOT_KEY: found and set as ssh command");
-  }
-}
-
 export interface LogEntry {
   commitHash: string;
   treeHash: string;
@@ -79,7 +72,6 @@ export class GitOps {
     this.repo.silent(true);
 
     setAuthorInfo(this.repo, authorName, authorEmail);
-    initSSHKey(this.repo);
   }
 
   /**
