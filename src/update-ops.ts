@@ -237,6 +237,7 @@ export interface UpdateResult {
 
 export class GitHubSubmoduleUpdate {
   private readonly ownerGitHub: GitHubAPI;
+  private readonly botGitHub: GitHubAPI;
   private readonly owner: string;
   private readonly repo: string;
   private readonly updateReport: UpdateSubmoduleReport;
@@ -247,9 +248,10 @@ export class GitHubSubmoduleUpdate {
   /**
    * @param targetBranch the name of the branch against which the PR is created
    */
-  constructor(ownerGitHub: GitHubAPI, owner: string, repo: string,
+  constructor(ownerGitHub: GitHubAPI, botGitHub: GitHubAPI, owner: string, repo: string,
     updateReport: UpdateSubmoduleReport, targetBranch: string) {
     this.ownerGitHub = ownerGitHub;
+    this.botGitHub = botGitHub;
     this.owner = owner;
     this.repo = repo;
     this.updateReport = updateReport;
@@ -378,7 +380,7 @@ Using branch:     ${this.updateReport.submodule.updateBranch}
         head: `${bot.userId}:${prBranch}`,
         base: `${this.targetBranch}`,
         body: msg,
-        maintainer_can_modify: true
+        maintainer_can_modify: false
       };
       const prResult = await this.ownerGitHub.pullRequests.create(request);
 

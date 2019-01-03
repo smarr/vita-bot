@@ -138,7 +138,7 @@ export async function doUpdates(repository: GithubRepo, ownerGitHub: GitHubAPI, 
     const gitUpdateResult = await updateSubmodule.performUpdate();
 
     if (gitUpdateResult.success) {
-      const githubUpdate = new GitHubSubmoduleUpdate(ownerGitHub, owner,
+      const githubUpdate = new GitHubSubmoduleUpdate(ownerGitHub, botGitHub, owner,
         repo, gitUpdateResult.reportInfo, config["target-branch"]);
       const existingBranch = await githubUpdate.findExistingPullRequest();
 

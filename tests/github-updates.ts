@@ -67,7 +67,7 @@ describe("GitHub interaction", function() {
             "title": "new-feature",
           });
 
-        updater = new GitHubSubmoduleUpdate(github, "smarr", "SOMns", UPDATE_SUBMODULE_REPORT, "dev");
+        updater = new GitHubSubmoduleUpdate(github, github, "smarr", "SOMns", UPDATE_SUBMODULE_REPORT, "dev");
         existingBranchName = await updater.findExistingPullRequest();
         updateResult = await updater.proposeUpdate("vita/libs-truffle/prev-date");
       });
@@ -122,7 +122,7 @@ describe("GitHub interaction", function() {
             "created_at": "2011-04-14T16:00:49Z"
           });
 
-        updater = new GitHubSubmoduleUpdate(github, "smarr", "SOMns", UPDATE_SUBMODULE_REPORT, "dev");
+        updater = new GitHubSubmoduleUpdate(github, github, "smarr", "SOMns", UPDATE_SUBMODULE_REPORT, "dev");
         existingBranchName = await updater.findExistingPullRequest();
         updateResult = await updater.proposeUpdate("vita/libs-truffle/prev-date");
       });
@@ -153,7 +153,7 @@ describe("GitHub interaction", function() {
             {name: "update-libs-truffle-2018-12-10"},
             {name: "update-libs-truffle-2018-12-10-1"},
           ]);
-        updater = new GitHubSubmoduleUpdate(github, "smarr", "SOMns", UPDATE_SUBMODULE_REPORT, "dev");
+        updater = new GitHubSubmoduleUpdate(github, github, "smarr", "SOMns", UPDATE_SUBMODULE_REPORT, "dev");
       });
 
       it("should get a name that's not yet in use", async function() {
@@ -167,7 +167,7 @@ describe("GitHub interaction", function() {
         nock(GITHUB_API)
           .get("/repos/" + TEST_BOT.userId + "/SOMns/branches")
           .reply(200, []);
-        updater = new GitHubSubmoduleUpdate(github, "smarr", "SOMns", UPDATE_SUBMODULE_REPORT, "dev");
+        updater = new GitHubSubmoduleUpdate(github, github, "smarr", "SOMns", UPDATE_SUBMODULE_REPORT, "dev");
       });
 
       it("should simply give a suitable branch name", async function() {
