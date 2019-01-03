@@ -271,7 +271,7 @@ export class GitHubSubmoduleUpdate {
   }
 
   private async getBranches(repo: GithubRepo): Promise<string[]> {
-    const request = this.ownerGitHub.repos.listBranches({owner: repo.owner, repo: repo.repo});
+    const request = this.ownerGitHub.repos.listBranches({ owner: repo.owner, repo: repo.repo });
 
     const results: string[] = [];
     await this.ownerGitHub.paginate(request, async (page) => {
@@ -337,7 +337,7 @@ export class GitHubSubmoduleUpdate {
                 break;
               }
             }
-            default: {}
+            default: { }
           }
         }
       }

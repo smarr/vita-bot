@@ -277,6 +277,6 @@ export class GitOps {
   }
 
   public async forcePush(remoteName: string, localBranch: string, remoteBranch: string) {
-    return this.repo.push(remoteName, localBranch + ":" + remoteBranch, {"--force": null});
+    return this.repo.push(remoteName, localBranch + ":" + remoteBranch, { "--force": null });
   }
 }

@@ -1,9 +1,11 @@
 import { bot } from "./config";
 
-import { ReposGetResponse, ReposCreateForkParams, ReposListForOrgParams,
+import {
+  ReposGetResponse, ReposCreateForkParams, ReposListForOrgParams,
   ReposListForOrgResponseItem, AppsListInstallationsResponseItem,
   AppsListReposResponse,
-  AppsListReposResponseRepositoriesItem } from "@octokit/rest";
+  AppsListReposResponseRepositoriesItem
+} from "@octokit/rest";
 import { Application } from "probot";
 import { GitHubAPI } from "probot/lib/github";
 
@@ -122,7 +124,7 @@ export class GithubWorkingCopy {
 
   private async getRepo(owner: string, repo: string, github: GitHubAPI): Promise<ReposGetResponse | null> {
     try {
-      const result = await github.repos.get({owner: owner, repo: repo});
+      const result = await github.repos.get({ owner: owner, repo: repo });
       return Promise.resolve(result.data);
     } catch (e) {
       if (e.name === "HttpError" && e.code === 404) {

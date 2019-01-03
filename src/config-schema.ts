@@ -5,7 +5,7 @@ export interface Configuration {
   "vita-bot": BotConfig;
 }
 
-export interface BotConfig extends BotBranchConfig, BotSubmoduleConfig {}
+export interface BotConfig extends BotBranchConfig, BotSubmoduleConfig { }
 
 interface BotBranchConfig {
   /** Tasks to update branches. */

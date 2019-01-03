@@ -154,7 +154,7 @@ describe("Managed repositories need to be forked", function() {
           });
         nock(GITHUB_API)
           .get("/orgs/vita-bot/repos?type=forks")
-          .reply(200, [{"name": "SOMns"}, {"name": "SOMns-1"}]);
+          .reply(200, [{ "name": "SOMns" }, { "name": "SOMns-1" }]);
         nock(GITHUB_API)
           .get("/repos/vita-bot/SOMns-1")
           .reply(200, {

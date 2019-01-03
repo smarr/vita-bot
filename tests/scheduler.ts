@@ -87,7 +87,7 @@ function createTestApp(app: Application) {
   // no op
 }
 
-const probot: Probot = new Probot({cert: RSA_KEY});
+const probot: Probot = new Probot({ cert: RSA_KEY });
 const app = probot.load(createTestApp);
 
 const events: Context[] = [];

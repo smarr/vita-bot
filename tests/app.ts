@@ -4,9 +4,11 @@ import { bot } from "../src/config";
 import { GitOps } from "../src/git-ops";
 
 import { RSA_KEY, GITHUB_API } from "./test-data";
-import { TEST_BOT, expectAuthorInfo, GIT_SUBMODULE_REPO,
+import {
+  TEST_BOT, expectAuthorInfo, GIT_SUBMODULE_REPO,
   ensureRepoWithSubmodules, SUBMODULE_UPDATE, GIT_SUBMODULE_REPO_NAME,
-  PUSH_REPO, ensureRepoForPushes, ensureRepoDoesNotExist } from "./test-repos";
+  PUSH_REPO, ensureRepoForPushes, ensureRepoDoesNotExist
+} from "./test-repos";
 
 import { expect } from "chai";
 import nock, { disableNetConnect, Scope } from "nock";
@@ -81,7 +83,7 @@ describe("Updates triggered by scheduler", function() {
           "token": "inst-100",
           "expires_at": "2016-07-11T22:14:10Z"
         });
-        nock(GITHUB_API)
+      nock(GITHUB_API)
         .post("/app/installations/101/access_tokens")
         .reply(201, {
           "token": "inst-101-bot",
@@ -90,15 +92,15 @@ describe("Updates triggered by scheduler", function() {
       nock(GITHUB_API)
         .get("/installation/repositories")
         .reply(200, {
-            "total_count": 1,
-            "repositories": [REPO_DEF]
-          });
+          "total_count": 1,
+          "repositories": [REPO_DEF]
+        });
       nock(GITHUB_API)
         .get("/installation/repositories")
         .reply(200, {
-            "total_count": 0,
-            "repositories": []
-          });
+          "total_count": 0,
+          "repositories": []
+        });
       nock(GITHUB_API)
         .get("/repos/" + REPO_OWNER + "/" + REPO_NAME + "/contents/.github/config.yml?ref=dev")
         .reply(200, {
@@ -142,11 +144,12 @@ update-submodules:
           "number": 1
         }, finalRequestFakeHeader);
 
-      const probot: Probot = new Probot({cert: RSA_KEY});
+      const probot: Probot = new Probot({ cert: RSA_KEY });
       const app = probot.load(createApp);
       app.receive({
         name: "schedule",
-        payload: { action: "start" }});
+        payload: { action: "start" }
+      });
       await allCompleted;
     });
 

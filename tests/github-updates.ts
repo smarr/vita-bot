@@ -58,7 +58,8 @@ describe("GitHub interaction", function() {
           .post("/repos/smarr/SOMns/pulls",
             function(body: any) {
               createBody = body;
-              return true; })
+              return true;
+            })
           .reply(201, {
             "url": GITHUB_API + "/repos/smarr/SOMns/pulls/" + NEW_ISSUE_ID,
             "id": 1,
@@ -109,7 +110,7 @@ describe("GitHub interaction", function() {
               },
               "body": withData("Please pull these awesome changes\n", SUBMODULE_META),
               "head": {
-                "ref" : "vita/libs-truffle/prev-date"
+                "ref": "vita/libs-truffle/prev-date"
               }
             }
           ]);
@@ -141,7 +142,7 @@ describe("GitHub interaction", function() {
   });
 
   describe("getBranchName", function() {
-    const repo: GithubRepo = {owner: TEST_BOT.userId, repo: "SOMns"};
+    const repo: GithubRepo = { owner: TEST_BOT.userId, repo: "SOMns" };
 
     let updater: GitHubSubmoduleUpdate;
     describe("Branch with name exists", function() {
@@ -149,9 +150,9 @@ describe("GitHub interaction", function() {
         nock(GITHUB_API)
           .get("/repos/" + TEST_BOT.userId + "/SOMns/branches")
           .reply(200, [
-            {name: "update-libs-truffle"},
-            {name: "update-libs-truffle-2018-12-10"},
-            {name: "update-libs-truffle-2018-12-10-1"},
+            { name: "update-libs-truffle" },
+            { name: "update-libs-truffle-2018-12-10" },
+            { name: "update-libs-truffle-2018-12-10-1" },
           ]);
         updater = new GitHubSubmoduleUpdate(github, github, "smarr", "SOMns", UPDATE_SUBMODULE_REPORT, "dev");
       });

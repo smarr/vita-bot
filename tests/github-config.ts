@@ -47,14 +47,14 @@ describe("GitHub configuration access", function() {
 
     before(async function() {
       nock(GITHUB_API)
-          .get("/repos/smarr/SOMns/contents/.github/config.yml?ref=dev")
-          .reply(200, {
-            "name": "config.yml",
-            "path": ".github/config.yml",
-            "type": "file",
-            "content": Buffer.from(TEST_BASIC_YAML).toString("base64"),
-            "encoding": "base64"
-          });
+        .get("/repos/smarr/SOMns/contents/.github/config.yml?ref=dev")
+        .reply(200, {
+          "name": "config.yml",
+          "path": ".github/config.yml",
+          "type": "file",
+          "content": Buffer.from(TEST_BASIC_YAML).toString("base64"),
+          "encoding": "base64"
+        });
       config = <BotConfig> await getProjectConfig(github, "smarr", "SOMns");
     });
 
@@ -110,9 +110,9 @@ describe("GitHub configuration access", function() {
       const devRq = nock(GITHUB_API)
         .get("/repos/smarr/SOMns/contents/.github/config.yml?ref=dev")
         .reply(404, {
-            "message": "Not Found",
-            "documentation_url": "https://developer.github.com/v3/repos/contents/#get-contents"
-          });
+          "message": "Not Found",
+          "documentation_url": "https://developer.github.com/v3/repos/contents/#get-contents"
+        });
       const masterRq = nock(GITHUB_API)
         .get("/repos/smarr/SOMns/contents/.github/config.yml?ref=master")
         .reply(200, {
@@ -159,15 +159,15 @@ describe("GitHub configuration access", function() {
       const devRq = nock(GITHUB_API)
         .get("/repos/smarr/SOMns/contents/.github/config.yml?ref=dev")
         .reply(404, {
-            "message": "Not Found",
-            "documentation_url": "https://developer.github.com/v3/repos/contents/#get-contents"
-          });
+          "message": "Not Found",
+          "documentation_url": "https://developer.github.com/v3/repos/contents/#get-contents"
+        });
       const masterRq = nock(GITHUB_API)
         .get("/repos/smarr/SOMns/contents/.github/config.yml?ref=master")
         .reply(404, {
-            "message": "Not Found",
-            "documentation_url": "https://developer.github.com/v3/repos/contents/#get-contents"
-          });
+          "message": "Not Found",
+          "documentation_url": "https://developer.github.com/v3/repos/contents/#get-contents"
+        });
       const foobarRq = nock(GITHUB_API)
         .get("/repos/smarr/SOMns/contents/.github/config.yml?ref=foobar")
         .reply(200, {
@@ -194,15 +194,15 @@ describe("GitHub configuration access", function() {
       const devRq = nock(GITHUB_API)
         .get("/repos/smarr/SOMns/contents/.github/config.yml?ref=dev")
         .reply(404, {
-            "message": "Not Found",
-            "documentation_url": "https://developer.github.com/v3/repos/contents/#get-contents"
-          });
+          "message": "Not Found",
+          "documentation_url": "https://developer.github.com/v3/repos/contents/#get-contents"
+        });
       const masterRq = nock(GITHUB_API)
         .get("/repos/smarr/SOMns/contents/.github/config.yml?ref=master")
         .reply(404, {
-            "message": "Not Found",
-            "documentation_url": "https://developer.github.com/v3/repos/contents/#get-contents"
-          });
+          "message": "Not Found",
+          "documentation_url": "https://developer.github.com/v3/repos/contents/#get-contents"
+        });
 
       const config = <BotConfig> await getProjectConfig(github, "smarr", "SOMns");
 
