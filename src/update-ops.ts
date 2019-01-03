@@ -375,8 +375,8 @@ Using branch:     ${this.updateReport.submodule.updateBranch}
         owner: this.owner,
         repo: this.repo,
         title: `Update submodule ${this.updateReport.submodule.path}`,
-        head: `${this.owner}/${prBranch}`,
-        base: `${this.owner}/${this.targetBranch}`,
+        head: `${bot.userId}:${prBranch}`,
+        base: `${this.targetBranch}`,
         body: msg,
         maintainer_can_modify: true
       };
