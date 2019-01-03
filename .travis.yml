@@ -9,7 +9,9 @@ before_script:
      STR=`echo "$@"`
      printf "travis_fold:start:$ID\n$STR\n"
      eval "$@"
+     RESULT_EVAL=$?
      printf "travis_fold:end:$ID\n"
+     return $RESULT_EVAL
    }
 
 cache: npm
