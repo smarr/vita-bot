@@ -11,7 +11,11 @@ export = (app: Application) => {
 
   app.log.info("Repository Task Scheduler initialized");
 
-  setupWebInterface(app, updater);
+  if (process.env.PUSH_KEY === undefined) {
+    throw new Error("Please configure a PUSH_KEY, a GitHub OAuth key, to be able to push updates to the bot repo");
+  }
+
+  setupWebInterface(app, updater, process.env.PUSH_KEY);
   app.log.info("Web Interface setup");
 
   let botGitHub: GitHubAPI | null = null;
@@ -25,6 +29,6 @@ export = (app: Application) => {
       const botInst = await updater.getBotInstallation();
       botGitHub = await app.auth(botInst.id);
     }
-    return doUpdates(context.payload.repository, context.github, botGitHub);
+    return doUpdates(context.payload.repository, context.github, botGitHub, process.env.PUSH_KEY!);
   });
 };

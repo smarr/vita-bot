@@ -12,7 +12,10 @@ import { GitHubAPI } from "probot/lib/github";
 
 export const REPO_ROOT = normalize(`${__dirname}/../../.base/working-copies`);
 
-export function setupWebInterface(app: Application, updater: RepositoryScheduler) {
+/**
+ * @param pushKey a GitHub OAuth key to be able to push updates to the bot's repos
+ */
+export function setupWebInterface(app: Application, updater: RepositoryScheduler, pushKey: string) {
   const router = app.route("/vita-bot");
 
   // Add a new route
@@ -86,7 +89,7 @@ export function setupWebInterface(app: Application, updater: RepositoryScheduler
     repoDetails.cloneUrl = repoFullDetails.data.clone_url;
 
     const botInst = await updater.getBotInstallation();
-    doUpdates(repoDetails, ownerGithub, await app.auth(botInst.id));
+    doUpdates(repoDetails, ownerGithub, await app.auth(botInst.id), pushKey);
   });
 
   router.get("/validate", (req: Request, res: Response) => {
@@ -117,7 +120,7 @@ export function setupWebInterface(app: Application, updater: RepositoryScheduler
   });
 }
 
-export async function doUpdates(repository: GithubRepo, ownerGitHub: GitHubAPI, botGitHub: GitHubAPI) {
+export async function doUpdates(repository: GithubRepo, ownerGitHub: GitHubAPI, botGitHub: GitHubAPI, pushKey: string) {
   const owner: string = repository.owner;
   const repo: string = repository.repo;
   const cloneUrl: string = repository.cloneUrl!;
@@ -148,12 +151,15 @@ export async function doUpdates(repository: GithubRepo, ownerGitHub: GitHubAPI, 
       const url = new URL(workingCopy.cloneUrl);
       url.username = bot.gitUserId;
 
-      if (process.env.PUSH_KEY !== undefined) {
-        url.password = process.env.PUSH_KEY;
+      let remoteUrl: string;
+      if (url.protocol === "file") {
+        remoteUrl = url.pathname;
       } else {
-        throw new Error("Please configure a PUSH_KEY, a GitHub OAuth key, to be able to push updates to the bot repo");
+        url.password = pushKey;
+        remoteUrl = url.toString();
       }
-      await updateSubmodule.pushBranch(branchName, url.toString());
+
+      await updateSubmodule.pushBranch(branchName, remoteUrl);
 
       await githubUpdate.proposeUpdate(branchName);
     } else {
