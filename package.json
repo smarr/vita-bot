@@ -24,6 +24,7 @@
     "chai": "^4.2.0",
     "mocha": "^5.2.0",
     "nock": "^10.0.4",
+    "source-map-support": "^0.5.9",
     "tslint": "^5.12.0",
     "typescript": "^3.2.2",
     "typescript-formatter": "^7.2.2"
@@ -49,7 +50,7 @@
     "verify": "npm run lint && npm run verifyformat",
     "lint": "tslint -c tslint.json --project tsconfig.json",
     "watch": "tsc -w",
-    "test": "mocha -t 15000 -u bdd ./dist/tests/"
+    "test": "mocha --require source-map-support/register -t 15000 -u bdd ./dist/tests/"
   },
   "vita-bot": {
     "name": "Vita Bot",
