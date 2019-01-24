@@ -38,6 +38,8 @@ const REPO_DEF = {
 
 disableNetConnect();
 
+process.env.PUSH_KEY = "test";
+
 describe("Updates triggered by scheduler", function() {
 
   after(function() {
