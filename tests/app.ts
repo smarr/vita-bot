@@ -123,8 +123,8 @@ update-submodules:
         .reply(200, {
           "name": REPO_NAME,
           "fork": true,
-          "clone_url": TEST_BOT_REMOTE_PATH,
-          "ssh_url": TEST_BOT_REMOTE_PATH,
+          "clone_url": `file:${TEST_BOT_REMOTE_PATH}`,
+          "ssh_url": `file:${TEST_BOT_REMOTE_PATH}`,
           "source": {
             "name": REPO_NAME,
             "owner": {
