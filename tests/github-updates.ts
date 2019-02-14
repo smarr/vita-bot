@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { GitHubAPI } from "probot/lib/github";
-import { GitHubSubmoduleUpdate, UpdateResult, SubmoduleMetadata, UpdateSubmoduleReport } from "../src/update-ops";
+import { GitHubSubmoduleUpdate, UpdateResult, SubmoduleMetadata, UpdateSubmoduleReport, GitHubBranchUpdate, BranchMetadata, UpdateBranchReport } from "../src/update-ops";
 import nock, { disableNetConnect, Scope } from "nock";
 import { readData, withData } from "../src/issue-metadata";
 import { GITHUB_API } from "./test-data";
@@ -13,6 +13,14 @@ import { GithubRepo } from "../src/github";
 const EXISTING_ISSUE_ID = 41;
 const NEW_ISSUE_ID = 42;
 const SUBMODULE_PATH = "libs/truffle";
+
+const UPDATE_BRANCH_REPORT: UpdateBranchReport = {
+  previousDate: "2018-12-01 15:12:34 +0100",
+  upstreamDate: "2018-12-10 15:12:34 +0100",
+  fastForward: true,
+  upstreamBranch: "upstreamBranch",
+  upstreamUrl: "http://upstream.branch.update.org"
+};
 
 const UPDATE_SUBMODULE_REPORT: UpdateSubmoduleReport = {
   previousDate: "2018-12-01 15:12:34 +0100",
@@ -123,7 +131,8 @@ describe("GitHub interaction", function() {
             "created_at": "2011-04-14T16:00:49Z"
           });
 
-        updater = new GitHubSubmoduleUpdate(github, github, "smarr", "SOMns", UPDATE_SUBMODULE_REPORT, "dev");
+        updater = new GitHubSubmoduleUpdate(github, github, "smarr", "SOMns",
+          UPDATE_SUBMODULE_REPORT, "dev");
         existingBranchName = await updater.findExistingPullRequest();
         updateResult = await updater.proposeUpdate("vita/libs-truffle/prev-date");
       });
@@ -179,6 +188,56 @@ describe("GitHub interaction", function() {
   });
 
   describe("Branch update", function() {
+    describe("First update", function() {
+      let updater: GitHubBranchUpdate;
+      let updateResult: UpdateResult;
+      let createPost: Scope;
+      let createBody: any;
+      let existingBranchName: string | null;
+
+      before(async function() {
+        nock(GITHUB_API)
+          .get("/repos/smarr/SOMns/pulls?head=vita-bot&state=open")
+          .reply(200, []);
+
+        createPost = nock(GITHUB_API)
+          .post("/repos/smarr/SOMns/pulls",
+            function(body: any) {
+              createBody = body;
+              return true;
+            })
+          .reply(201, {
+            "url": GITHUB_API + "/repos/smarr/SOMns/pulls/" + NEW_ISSUE_ID,
+            "id": 1,
+            "number": NEW_ISSUE_ID,
+            "state": "open",
+            "title": "new-feature",
+          });
+
+        updater = new GitHubBranchUpdate(github, github, "smarr", "SOMns", UPDATE_BRANCH_REPORT, "dev");
+        existingBranchName = await updater.findExistingPullRequest();
+        updateResult = await updater.proposeUpdate("vita/libs-truffle/prev-date");
+      });
+
+      it("should check whether PR exists and not find any open one", function() {
+        expect(updateResult.updatedExisting).to.be.false;
+        expect(updateResult.existingId).to.be.undefined;
+        expect(existingBranchName).to.be.null;
+      });
+
+      it("should create PR", function() {
+        expect(createPost.isDone()).to.be.true;
+        expect(updateResult.newId).to.equal(NEW_ISSUE_ID);
+      });
+
+      it("should be created with metadata", function() {
+        const metaData: BranchMetadata = readData(createBody.body);
+        expect(metaData).to.not.be.null;
+        expect(metaData.type).to.equal("branch");
+        expect(metaData.branchName).to.equal("dev");
+      });
+    });
+
     describe("Failed update without open PR or issue", function() {
       it.skip("should update search for issue and PR, but not find one", function() {
 

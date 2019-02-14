@@ -12,6 +12,16 @@ import { GitHubAPI } from "probot/lib/github";
 const UPSTREAM_REMOTE = "upstream";
 const WORKING_COPY_REMOTE = "working-copy";
 
+/** Information meant for human interaction. */
+export interface UpdateBranchReport {
+  previousDate: string;
+  upstreamDate: string;
+  fastForward: boolean;
+
+  upstreamUrl: string;
+  upstreamBranch: string;
+}
+
 export interface UpdateBranchResult {
   success: boolean;
   fastForward: boolean;
@@ -21,6 +31,9 @@ export interface UpdateBranchResult {
     upstream: LogEntry,
     afterUpdate: LogEntry
   };
+
+  /** Information meant for human interaction. */
+  reportInfo: UpdateBranchReport;
 }
 
 /** Information meant for human interaction. */
@@ -99,6 +112,13 @@ export class UpdateBranch extends GitUpdateTask {
         beforeUpdate: preUpdateHead,
         upstream: remoteHead,
         afterUpdate: postUpdateHead
+      },
+      reportInfo: {
+        previousDate: preUpdateHead.committerDate,
+        upstreamDate: remoteHead.committerDate,
+        fastForward: isFastForward,
+        upstreamUrl: this.config.url,
+        upstreamBranch: this.config.branch
       }
     };
 
@@ -225,6 +245,13 @@ export interface SubmoduleMetadata {
 
 export interface BranchMetadata {
   type: "branch";
+  /**
+   * Name of the branch to be updated.
+   *
+   * Strictly speaking, it's redundant with PR metadata,
+   * but this is more of a marker for us.
+   */
+  branchName: string;
 }
 
 export interface UpdateResult {
@@ -235,26 +262,24 @@ export interface UpdateResult {
   commentId?: number;
 }
 
-export class GitHubSubmoduleUpdate {
-  private readonly ownerGitHub: GitHubAPI;
-  private readonly botGitHub: GitHubAPI;
-  private readonly owner: string;
-  private readonly repo: string;
-  private readonly updateReport: UpdateSubmoduleReport;
-  private readonly targetBranch: string;
+abstract class GithubUpdate {
+  protected readonly ownerGitHub: GitHubAPI;
+  protected readonly botGitHub: GitHubAPI;
 
-  private existingPullRequest?: PullRequestsListResponseItem | null;
+  protected readonly owner: string;
+  protected readonly repo: string;
 
-  /**
-   * @param targetBranch the name of the branch against which the PR is created
-   */
-  constructor(ownerGitHub: GitHubAPI, botGitHub: GitHubAPI, owner: string, repo: string,
-    updateReport: UpdateSubmoduleReport, targetBranch: string) {
+  protected readonly targetBranch: string;
+
+  protected existingPullRequest?: PullRequestsListResponseItem | null;
+
+  protected constructor(ownerGitHub: GitHubAPI, botGitHub: GitHubAPI,
+    owner: string, repo: string, targetBranch: string) {
     this.ownerGitHub = ownerGitHub;
     this.botGitHub = botGitHub;
     this.owner = owner;
     this.repo = repo;
-    this.updateReport = updateReport;
+
     this.targetBranch = targetBranch;
 
     this.existingPullRequest = undefined;
@@ -268,6 +293,133 @@ export class GitHubSubmoduleUpdate {
       const branchName = this.existingPullRequest.head.ref;
       return Promise.resolve(branchName);
     }
+  }
+
+  protected abstract pullRequestMatches(data: UpdateMetadata): boolean;
+
+  private async findPullRequest(): Promise<PullRequestsListResponseItem | null> {
+    const search: PullRequestsListParams = {
+      owner: this.owner,
+      repo: this.repo,
+      head: bot.userId,
+      state: "open",
+    };
+
+    let result: PullRequestsListResponseItem | null = null;
+
+    const request = this.ownerGitHub.pullRequests.list(search);
+    await this.ownerGitHub.paginate(request, async (page, done) => {
+      const pullRequests: PullRequestsListResponseItem[] = (await page).data;
+
+      for (const pr of pullRequests) {
+        const data: UpdateMetadata = readData(pr.body);
+        if (data !== null && this.pullRequestMatches(data)) {
+          result = pr;
+
+          if (done) { done(); }
+          break;
+        }
+      }
+    });
+
+    return Promise.resolve(result);
+  }
+}
+
+export class GitHubBranchUpdate extends GithubUpdate {
+  protected readonly updateReport: UpdateBranchReport;
+
+  constructor(ownerGitHub: GitHubAPI, botGitHub: GitHubAPI, owner: string,
+    repo: string, updateReport: UpdateBranchReport, targetBranch: string) {
+    super(ownerGitHub, botGitHub, owner, repo, targetBranch);
+    this.updateReport = updateReport;
+  }
+
+  protected pullRequestMatches(data: UpdateMetadata): boolean {
+    throw new Error("not yet implemented");
+  }
+
+  /**
+   * @param prBranch the name of the branch containing the changes
+   */
+  public async proposeUpdate(prBranch: string): Promise<UpdateResult> {
+    if (this.existingPullRequest === undefined) {
+      throw new Error("findExistingPullRequest should be used first, to know whether a PR exists");
+    }
+    if (this.existingPullRequest === null) {
+      let msg = `This PR changes branch ${this.targetBranch} as follows:
+
+Previous version from: ${this.updateReport.previousDate}
+Current version from:  ${this.updateReport.upstreamDate}
+
+Updated based on: ${this.updateReport.upstreamUrl}
+Using branch:     ${this.updateReport.upstreamBranch}
+`;
+      if (this.updateReport.fastForward) {
+        msg += `\nThis was a simple fast-forward update.`;
+      }
+
+      msg += `\nTODO: instructions how to apply these changes.
+Think GitHub doesn't provide
+the right functionality for this`;
+
+      const metadata: BranchMetadata = {
+        type: "branch",
+        branchName: this.targetBranch
+      };
+      msg = withData(msg, metadata);
+
+      const request: PullRequestsCreateParams = {
+        owner: this.owner,
+        repo: this.repo,
+        title: `Update branch ${this.targetBranch}`,
+        head: `${bot.userId}:${prBranch}`,
+        base: `${this.targetBranch}`,
+        body: msg,
+        maintainer_can_modify: false
+      };
+      const prResult = await this.ownerGitHub.pullRequests.create(request);
+
+      const result: UpdateResult = {
+        updatedExisting: false,
+        newId: prResult.data.number
+      };
+      return Promise.resolve(result);
+    } else {
+      let msg = `PR updated with changes to ${this.updateReport.upstreamBranch} from ${this.updateReport.upstreamDate}.`;
+
+      const request: IssuesCreateCommentParams = {
+        owner: this.owner,
+        repo: this.repo,
+        number: this.existingPullRequest.number,
+        body: msg
+      };
+      const cmtResult = await this.ownerGitHub.issues.createComment(request);
+      const result: UpdateResult = {
+        updatedExisting: true,
+        existingId: this.existingPullRequest.number,
+        commentId: cmtResult.data.id
+      };
+      return Promise.resolve(result);
+    }
+  }
+}
+
+export class GitHubSubmoduleUpdate extends GithubUpdate {
+  protected readonly updateReport: UpdateSubmoduleReport;
+
+  /**
+   * @param targetBranch the name of the branch against which the PR is created
+   */
+  constructor(ownerGitHub: GitHubAPI, botGitHub: GitHubAPI, owner: string, repo: string,
+    updateReport: UpdateSubmoduleReport, targetBranch: string) {
+    super(ownerGitHub, botGitHub, owner, repo, targetBranch);
+    this.updateReport = updateReport;
+  }
+
+  protected pullRequestMatches(data: UpdateMetadata): boolean {
+    return data.type === "submodule" &&
+      data.submodulePath === this.updateReport.submodule.path;
   }
 
   private async getBranches(repo: GithubRepo): Promise<string[]> {
@@ -309,41 +461,6 @@ export class GitHubSubmoduleUpdate {
     } while (existingBranches.includes(branchNameWithNumber));
 
     return Promise.resolve(branchNameWithNumber);
-  }
-
-  private async findPullRequest(): Promise<PullRequestsListResponseItem | null> {
-    const search: PullRequestsListParams = {
-      owner: this.owner,
-      repo: this.repo,
-      head: bot.userId,
-      state: "open",
-    };
-
-    let result: PullRequestsListResponseItem | null = null;
-
-    const request = this.ownerGitHub.pullRequests.list(search);
-    await this.ownerGitHub.paginate(request, async (page, done) => {
-      const pullRequests: PullRequestsListResponseItem[] = (await page).data;
-
-      for (const pr of pullRequests) {
-        const data: UpdateMetadata = readData(pr.body);
-        if (data !== null) {
-          switch (data.type) {
-            case "submodule": {
-              if (data.submodulePath === this.updateReport.submodule.path) {
-                result = pr;
-
-                if (done) { done(); }
-                break;
-              }
-            }
-            default: { }
-          }
-        }
-      }
-    });
-
-    return Promise.resolve(result);
   }
 
   /**
