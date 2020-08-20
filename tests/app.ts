@@ -149,6 +149,7 @@ update-submodules:
       const probot: Probot = new Probot({ cert: RSA_KEY });
       const app = probot.load(createApp);
       app.receive({
+        id: "start-event-1",
         name: "schedule",
         payload: { action: "start" }
       });

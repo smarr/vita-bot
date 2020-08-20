@@ -22,6 +22,8 @@ export class RepositoryScheduler {
   private completedInterval: number;
   private lastInterval: Promise<number>;
 
+  private eventId: number;
+
   /**
    * @param app
    * @param checkInterval in seconds
@@ -35,6 +37,7 @@ export class RepositoryScheduler {
     this.lastIntervalId = -1;
     this.completedInterval = -1;
     this.lastInterval = Promise.resolve(-1);
+    this.eventId = 0;
 
     if (requestsPerSecond === 0) {
       this.requestScheduler = undefined;
@@ -114,6 +117,7 @@ export class RepositoryScheduler {
           }
         };
         const repoUpdateEvent = {
+          id: `repo-update-${this.eventId++}`,
           name: "schedule",
           payload: payload
         };
