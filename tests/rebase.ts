@@ -18,6 +18,12 @@ describe("Update Branches Automatically, possibly requiring rebase", function() 
     await ensureDownstreamRepo();
   });
 
+  it("Start out with a repo that is clean", async function() {
+    const repo = new GitOps(GIT_MAIN_REPO, bot.name, bot.email);
+    const result = await repo.isClean()
+    expect(result).to.be.true;
+  });
+
   it("branch without conflicts", async function() {
     const repo = new GitOps(GIT_MAIN_REPO, bot.name, bot.email);
     const result = await repo.rebase(BRANCH_NO_CONFLICT, BRANCH_UPSTREAM);

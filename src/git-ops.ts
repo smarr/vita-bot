@@ -272,6 +272,11 @@ export class GitOps {
     return this.repo.commit(msg);
   }
 
+  public async isClean(): Promise<boolean> {
+    const status = await this.repo.status();
+    return status.isClean();
+  }
+
   public async getSubmoduleUrl(submodulePath: string): Promise<string> {
     const url = await this.repo.raw(["config", "--file=.gitmodules", "--get", "submodule." + submodulePath + ".url"]);
     return Promise.resolve(url.trim());
