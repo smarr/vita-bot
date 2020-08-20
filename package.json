@@ -22,7 +22,6 @@
     "@types/rimraf": "3.0.0",
     "chai": "4.2.0",
     "mocha": "8.1.1",
-    "mocha-dd-reporter": "1.0.3",
     "nock": "13.0.4",
     "source-map-support": "0.5.19",
     "tslint": "6.1.3",
@@ -50,7 +49,7 @@
     "verify": "npm run lint && npm run verifyformat",
     "lint": "tslint -c tslint.json --project tsconfig.json",
     "watch": "tsc -w",
-    "test": "mocha --reporter mocha-dd-reporter --require source-map-support/register -t 15000 -u bdd ./dist/tests/"
+    "test": "mocha --require source-map-support/register -t 15000 -u bdd ./dist/tests/"
   },
   "vita-bot": {
     "name": "Vita Bot",
