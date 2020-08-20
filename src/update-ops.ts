@@ -1,10 +1,9 @@
 import { bot } from "./config";
 import { UpdateBranchConfig, BotDetails, UpdateSubmoduleConfig } from "./config-schema";
 import { GitOps, RebaseResult, LogEntry } from "./git-ops";
-import { GithubRepo } from "./github";
+import { GithubRepo, PullRequestsListResponseItem, PullRequestsListParams, PullRequestsCreateParams, IssuesCreateCommentParams, ReposListBranchesResponseItem } from "./github";
 import { readData, withData } from "./issue-metadata";
 
-import { PullRequestsListResponseItem, PullRequestsListParams, PullRequestsCreateParams, IssuesCreateCommentParams, ReposListBranchesResponseItem } from "@octokit/rest";
 import { CommitSummary } from "simple-git/promise";
 import { GitHubAPI } from "probot/lib/github";
 
@@ -307,7 +306,7 @@ abstract class GithubUpdate {
 
     let result: PullRequestsListResponseItem | null = null;
 
-    const request = this.ownerGitHub.pullRequests.list(search);
+    const request = this.ownerGitHub.pulls.list(search);
     await this.ownerGitHub.paginate(request, async (page, done) => {
       const pullRequests: PullRequestsListResponseItem[] = (await page).data;
 
@@ -378,7 +377,7 @@ the right functionality for this`;
         body: msg,
         maintainer_can_modify: false
       };
-      const prResult = await this.ownerGitHub.pullRequests.create(request);
+      const prResult = await this.ownerGitHub.pulls.create(request);
 
       const result: UpdateResult = {
         updatedExisting: false,
@@ -391,7 +390,7 @@ the right functionality for this`;
       const request: IssuesCreateCommentParams = {
         owner: this.owner,
         repo: this.repo,
-        number: this.existingPullRequest.number,
+        issue_number: this.existingPullRequest.number,
         body: msg
       };
       const cmtResult = await this.ownerGitHub.issues.createComment(request);
@@ -499,7 +498,7 @@ Using branch:     ${this.updateReport.submodule.updateBranch}
         body: msg,
         maintainer_can_modify: false
       };
-      const prResult = await this.ownerGitHub.pullRequests.create(request);
+      const prResult = await this.ownerGitHub.pulls.create(request);
 
       const result: UpdateResult = {
         updatedExisting: false,
@@ -512,7 +511,7 @@ Using branch:     ${this.updateReport.submodule.updateBranch}
       const request: IssuesCreateCommentParams = {
         owner: this.owner,
         repo: this.repo,
-        number: this.existingPullRequest.number,
+        issue_number: this.existingPullRequest.number,
         body: msg
       };
       const cmtResult = await this.ownerGitHub.issues.createComment(request);

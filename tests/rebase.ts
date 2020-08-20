@@ -10,7 +10,7 @@ import { expect } from "chai";
 import { UpdateBranchConfig } from "../src/config-schema";
 import { UpdateBranch } from "../src/update-ops";
 
-const config = loadTestConfig(__dirname + "/../../tests/test.yml");
+const config = <any> loadTestConfig(__dirname + "/../../tests/test.yml");
 
 describe("Update Branches Automatically, possibly requiring rebase", function() {
   before(async function() {

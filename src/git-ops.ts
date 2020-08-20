@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync } from "fs";
 import git, { SimpleGit } from "simple-git/promise";
+import { ResetMode } from "simple-git";
 
 /**
  * Set author and committer information on the repository.
@@ -98,7 +99,7 @@ export class GitOps {
   }
 
   public async fetch(remoteName: string, branch?: string) {
-    return this.repo.fetch(remoteName, branch);
+    return this.repo.fetch(remoteName, <string> branch);
   }
 
   public async fastForward(remoteName: string, branch?: string) {
@@ -178,7 +179,7 @@ export class GitOps {
   }
 
   public async ensureBranch(remoteName: string, branch: string) {
-    await this.repo.reset("hard");
+    await this.repo.reset(ResetMode.HARD);
     if (await this.hasBranch(branch)) {
       return Promise.resolve();
     } else {
@@ -187,7 +188,7 @@ export class GitOps {
   }
 
   public async ensureLatest(branch: string) {
-    await this.repo.reset("hard");
+    await this.repo.reset(ResetMode.HARD);
     await this.repo.checkout(branch);
     await this.repo.pull();
     return Promise.resolve();

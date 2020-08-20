@@ -11,7 +11,7 @@ import {
 } from "./test-repos";
 
 import { expect } from "chai";
-import nock, { disableNetConnect, Scope } from "nock";
+import nock, { disableNetConnect, Scope, ReplyHeaders } from "nock";
 import { Probot } from "probot";
 
 // TODO: this should be the most high-level integration test, simply verifying
@@ -51,10 +51,10 @@ describe("Updates triggered by scheduler", function() {
     let createPrRequest: Scope;
 
     before(async function() {
-      let allCompletedResolver: () => void;
-      const allCompleted = new Promise((resolve, reject) => { allCompletedResolver = resolve; });
-      const finalRequestFakeHeader = {
-        "X-All-Requests-Completed": () => allCompletedResolver()
+      let allCompletedResolver: () => string;
+      const allCompleted = new Promise((resolve, reject) => { allCompletedResolver = <any> resolve; });
+      const finalRequestFakeHeader: ReplyHeaders = {
+        "X-All-Requests-Completed": (_req, _res, _body) => allCompletedResolver()
       };
       await ensureRepoWithSubmodules();
       await ensureRepoForPushes();

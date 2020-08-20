@@ -1,16 +1,32 @@
 import { bot } from "./config";
 
-import {
-  ReposGetResponse, ReposCreateForkParams, ReposListForOrgParams,
-  ReposListForOrgResponseItem, AppsListInstallationsResponseItem,
-  AppsListReposResponse,
-  AppsListReposResponseRepositoriesItem
-} from "@octokit/rest";
 import { Application } from "probot";
 import { GitHubAPI } from "probot/lib/github";
+import { RestEndpointMethodTypes } from "@octokit/rest";
 
-export interface GitHubRepository extends AppsListReposResponseRepositoriesItem { }
-export interface GitHubInstallation extends AppsListInstallationsResponseItem { }
+type GitHubInstallationData = RestEndpointMethodTypes["apps"]["listInstallations"]["response"]["data"];
+export type GitHubInstallation = RestEndpointMethodTypes["apps"]["listInstallations"]["response"]["data"][0];
+type GitHubRepositoryData = RestEndpointMethodTypes["apps"]["listReposAccessibleToInstallation"]["response"]["data"];
+export type GitHubRepository = RestEndpointMethodTypes["apps"]["listReposAccessibleToInstallation"]["response"]["data"]["repositories"][0];
+
+type ReposListForOrgParams = RestEndpointMethodTypes["repos"]["listForOrg"]["parameters"];
+type ListForOrgData = RestEndpointMethodTypes["repos"]["listForOrg"]["response"]["data"];
+
+type ReposCreateForkParams = RestEndpointMethodTypes["repos"]["createFork"]["parameters"];
+
+type ReposGetResponseData = RestEndpointMethodTypes["repos"]["get"]["response"]["data"];
+
+export type ReposGetContentsParams = RestEndpointMethodTypes["repos"]["getContent"]["parameters"];
+export type ReposGetContentsResponse = RestEndpointMethodTypes["repos"]["getContent"]["response"];
+
+export type IssuesCreateCommentParams = RestEndpointMethodTypes["issues"]["createComment"]["parameters"];
+
+export type ReposListBranchesResponseItem = RestEndpointMethodTypes["repos"]["listBranches"]["response"]["data"][0];
+
+export type PullRequestsCreateParams = RestEndpointMethodTypes["pulls"]["create"]["parameters"];
+
+export type PullRequestsListParams = RestEndpointMethodTypes["pulls"]["list"]["parameters"];
+export type PullRequestsListResponseItem = RestEndpointMethodTypes["pulls"]["list"]["response"]["data"][0];
 
 export interface GithubRepo {
   owner: string;
@@ -55,7 +71,7 @@ export class GithubInstallations {
     const results: GitHubInstallation[] = [];
 
     await github.paginate(request, async (page) => {
-      const installations: AppsListInstallationsResponseItem[] = (await page).data;
+      const installations: GitHubInstallationData = (await page).data;
       for (const installation of installations) {
         if (installation.account.login === bot.userId) {
           this.botInstallationResolver(installation);
@@ -74,7 +90,7 @@ export class GithubInstallations {
 
     const results: GitHubRepository[] = [];
     await github.paginate(request, async (page) => {
-      const response: AppsListReposResponse = (await page).data;
+      const response: GitHubRepositoryData = (await page).data;
       for (const repo of response.repositories) {
         results.push(repo);
       }
@@ -122,10 +138,11 @@ export class GithubWorkingCopy {
     this.botGitHub = botGitHub;
   }
 
-  private async getRepo(owner: string, repo: string, github: GitHubAPI): Promise<ReposGetResponse | null> {
+  private async getRepo(owner: string, repo: string, github: GitHubAPI): Promise<ReposGetResponseData | null> {
     try {
       const result = await github.repos.get({ owner: owner, repo: repo });
-      return Promise.resolve(result.data);
+      const data = <ReposGetResponseData> <any> result.data;
+      return Promise.resolve(data);
     } catch (e) {
       if (e.name === "HttpError" && e.code === 404) {
         return Promise.resolve(null);
@@ -151,21 +168,21 @@ export class GithubWorkingCopy {
     });
   }
 
-  private async findRepoWithSuffix(sourceOwner: string, sourceRepo: string): Promise<ReposGetResponse | null> {
+  private async findRepoWithSuffix(sourceOwner: string, sourceRepo: string): Promise<ReposGetResponseData | null> {
     const params: ReposListForOrgParams = {
       org: bot.userId,
       type: "forks"
     };
 
-    let result: ReposGetResponse | null = null;
+    let result: ReposGetResponseData | null = null;
 
     const request = this.botGitHub.repos.listForOrg(params);
     await this.botGitHub.paginate(request, async (page, done) => {
-      const repos: ReposListForOrgResponseItem[] = (await page).data;
+      const repos: ListForOrgData = (await page).data;
 
       for (const repo of repos) {
         if (repo.name.startsWith(this.repo) && repo.name !== this.repo) {
-          const repoDetails = <ReposGetResponse> await this.getRepo(bot.userId, repo.name, this.botGitHub);
+          const repoDetails = <ReposGetResponseData> await this.getRepo(bot.userId, repo.name, this.botGitHub);
           if (repoDetails.source.name === sourceRepo && repoDetails.source.owner.login === sourceOwner) {
             result = repoDetails;
 

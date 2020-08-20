@@ -6,7 +6,7 @@ import { REPO_BASE, loadTestConfig, ensureRepoWithSubmodules, SUBMODULE_UPDATE, 
 import { expect } from "chai";
 import { GitOps } from "../src/git-ops";
 
-const testConfig = loadTestConfig(__dirname + "/../../tests/test.yml");
+const testConfig = <any> loadTestConfig(__dirname + "/../../tests/test.yml");
 const updateAvailable = testConfig["update-submodule.update-available"];
 const updateUnavailable = testConfig["update-submodule.update-unavailable"];
 const updateConflicting = testConfig["update-submodule.update-conflicting"];

@@ -46,7 +46,7 @@ export function setupWebInterface(app: Application, updater: RepositoryScheduler
 
   router.get("/config/:inst/:owner/:repo", async (req: Request, res: Response) => {
     res.type("html");
-    const inst = req.params.inst;
+    const inst = Number(req.params.inst);
     const owner = req.params.owner;
     const repo = req.params.repo;
     const config = await getProjectConfig(await app.auth(inst), owner, repo);

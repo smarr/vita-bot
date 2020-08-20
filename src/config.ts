@@ -1,15 +1,15 @@
 import { BotDetails, BotConfig } from "./config-schema";
 
-import { ReposGetContentsParams, Response } from "@octokit/rest";
 import { readFileSync } from "fs";
 import yaml from "js-yaml";
 import { GitHubAPI } from "probot/lib/github";
+import { ReposGetContentsParams, ReposGetContentsResponse } from "./github";
 
 const pkg = readFileSync(__dirname + "/../../package.json", { encoding: "utf-8" });
 export const bot: BotDetails = JSON.parse(pkg)["vita-bot"];
 
 export function getConfigFromYaml(data: string): BotConfig {
-  const config: BotConfig = yaml.safeLoad(data);
+  const config: BotConfig = <BotConfig> yaml.safeLoad(data);
   return config;
 }
 
@@ -22,9 +22,21 @@ async function getConfig(github: GitHubAPI, owner: string,
     ref: branch
   };
 
-  let response: Response<any>;
   try {
-    response = await github.repos.getContents(params);
+    const response = <ReposGetContentsResponse> <any> await github.repos.getContents(params);
+
+    if (response.data.type !== "file") {
+      return Promise.resolve(null);
+    }
+
+    if (response.data.encoding !== "base64") {
+      throw new Error(`Unsupported file encoding: ${response.data.encoding}`);
+    }
+
+    const data = Buffer.from(response.data.content, "base64").toString();
+    const config = getConfigFromYaml(data);
+    return Promise.resolve(config);
+
   } catch (e) {
     if (e.name === "HttpError" && e.code === 404) {
       return Promise.resolve(null);
@@ -32,18 +44,6 @@ async function getConfig(github: GitHubAPI, owner: string,
       throw e;
     }
   }
-
-  if (response.data.type !== "file") {
-    return Promise.resolve(null);
-  }
-
-  if (response.data.encoding !== "base64") {
-    throw new Error(`Unsupported file encoding: ${response.data.encoding}`);
-  }
-
-  const data = Buffer.from(response.data.content, "base64").toString();
-  const config = getConfigFromYaml(data);
-  return Promise.resolve(config);
 }
 
 export async function getProjectConfig(github: GitHubAPI, owner: string, repo: string): Promise<BotConfig | null> {
