@@ -1,6 +1,5 @@
 import { existsSync, mkdirSync } from "fs";
-import git, { SimpleGit } from "simple-git/promise";
-import { ResetMode } from "simple-git";
+import git, { ResetMode, SimpleGit } from "simple-git";
 
 /**
  * Set author and committer information on the repository.
