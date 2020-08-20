@@ -18,5 +18,5 @@ before_script:
 cache: npm
 
 script:
-  - run DEBUG="simple-git" npm test
+  - run DEBUG="simple-git:*,simple-git" npm test
   - run npm run verify
