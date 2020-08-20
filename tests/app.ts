@@ -146,7 +146,7 @@ update-submodules:
           "number": 1
         }, finalRequestFakeHeader);
 
-      const probot: Probot = new Probot({ cert: RSA_KEY });
+      const probot: Probot = new Probot({ cert: RSA_KEY, id: 1234 });
       const app = probot.load(createApp);
       app.receive({
         id: "start-event-1",
