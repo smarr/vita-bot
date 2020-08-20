@@ -304,24 +304,18 @@ abstract class GithubUpdate {
       state: "open",
     };
 
-    let result: PullRequestsListResponseItem | null = null;
+    const options = this.ownerGitHub.pulls.list.endpoint.merge(search);
 
-    const request = this.ownerGitHub.pulls.list(search);
-    await this.ownerGitHub.paginate(request, async (page, done) => {
-      const pullRequests: PullRequestsListResponseItem[] = (await page).data;
-
-      for (const pr of pullRequests) {
+    for await (const page of this.ownerGitHub.paginate.iterator(options)) {
+      for (const pr of page.data) {
         const data: UpdateMetadata = readData(pr.body);
         if (data !== null && this.pullRequestMatches(data)) {
-          result = pr;
-
-          if (done) { done(); }
-          break;
+          return Promise.resolve(pr);
         }
       }
-    });
+    }
 
-    return Promise.resolve(result);
+    return Promise.resolve(null);
   }
 }
 
@@ -422,15 +416,15 @@ export class GitHubSubmoduleUpdate extends GithubUpdate {
   }
 
   private async getBranches(repo: GithubRepo): Promise<string[]> {
-    const request = this.ownerGitHub.repos.listBranches({ owner: repo.owner, repo: repo.repo });
-
+    const options = this.ownerGitHub.repos.listBranches.endpoint.merge(
+      { owner: repo.owner, repo: repo.repo });
     const results: string[] = [];
-    await this.ownerGitHub.paginate(request, async (page) => {
-      const branches: ReposListBranchesResponseItem[] = (await page).data;
-      for (const branch of branches) {
+
+    for await (const page of this.ownerGitHub.paginate.iterator(options)) {
+      for (const branch of page.data) {
         results.push(branch.name);
       }
-    });
+    }
 
     return Promise.resolve(results);
   }

@@ -66,35 +66,31 @@ export class GithubInstallations {
 
   private async getInstallations(): Promise<GitHubInstallation[]> {
     const github = await this.app.auth();
-    const request = github.apps.listInstallations({});
-
+    const options = github.apps.listInstallations.endpoint.merge({});
     const results: GitHubInstallation[] = [];
 
-    await github.paginate(request, async (page) => {
-      const installations: GitHubInstallationData = (await page).data;
-      for (const installation of installations) {
+    for await (const page of github.paginate.iterator(options)) {
+      for (const installation of page.data) {
         if (installation.account.login === bot.userId) {
           this.botInstallationResolver(installation);
         }
         results.push(installation);
       }
-    });
+    }
 
     return Promise.resolve(results);
   }
 
   private async getRepositories(installation: GitHubInstallation): Promise<GitHubRepository[]> {
     const github = await this.app.auth(installation.id);
-
-    const request = github.apps.listRepos({});
-
+    const options = github.apps.listRepos.endpoint.merge({});
     const results: GitHubRepository[] = [];
-    await github.paginate(request, async (page) => {
-      const response: GitHubRepositoryData = (await page).data;
-      for (const repo of response.repositories) {
+
+    for await (const page of github.paginate.iterator(options)) {
+      for (const repo of page.data) {
         results.push(repo);
       }
-    });
+    }
 
     return Promise.resolve(results);
   }
@@ -174,26 +170,20 @@ export class GithubWorkingCopy {
       type: "forks"
     };
 
-    let result: ReposGetResponseData | null = null;
+    const options = this.botGitHub.repos.listForOrg.endpoint.merge(params);
 
-    const request = this.botGitHub.repos.listForOrg(params);
-    await this.botGitHub.paginate(request, async (page, done) => {
-      const repos: ListForOrgData = (await page).data;
-
-      for (const repo of repos) {
+    for await (const page of this.botGitHub.paginate.iterator(options)) {
+      for (const repo of page.data) {
         if (repo.name.startsWith(this.repo) && repo.name !== this.repo) {
           const repoDetails = <ReposGetResponseData> await this.getRepo(bot.userId, repo.name, this.botGitHub);
           if (repoDetails.source.name === sourceRepo && repoDetails.source.owner.login === sourceOwner) {
-            result = repoDetails;
-
-            if (done) { done(); }
-            break;
+            return Promise.resolve(repoDetails);
           }
         }
       }
-    });
+    }
 
-    return Promise.resolve(result);
+    return Promise.resolve(null);
   }
 
   public async ensureCopyInBotUser(): Promise<WorkingCopyResult> {
