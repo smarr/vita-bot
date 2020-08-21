@@ -80,6 +80,14 @@ export function expectCommitterInfo(commit: LogEntry, bot: BotDetails) {
   expect(commit.committerEmail).to.equal(bot.email);
 }
 
+function wait(): Promise<void> {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      resolve();
+    }, 200);
+  });
+}
+
 async function populateMainRepo(): Promise<void> {
   const repo = makeTestGit();
   await repo.init();
@@ -88,31 +96,45 @@ async function populateMainRepo(): Promise<void> {
   writeFileSync(FILE2, TEST_TEXT);
   await repo.add(FILE1);
   await repo.add(FILE2);
+  await wait();
   await repo.commit("Initial Commit");
+  await wait();
   await repo.branch([BRANCH_ROOT]);
+  await wait();
 
   writeFileSync(FILE1, TEST_TEXT + TEST_TEXT);
   await repo.add(FILE1);
+  await wait();
   await repo.commit("Extend " + FILE1);
+  await wait();
 
   writeFileSync(FILE1, TEST_TEXT + TEST_TEXT + TEST_TEXT);
   await repo.add(FILE1);
+  await wait();
   await repo.commit(`Extend ${FILE1} more`);
+  await wait();
 
   // the branch representing upstream development
   await repo.branch([BRANCH_UPSTREAM]);
+  await wait();
 
   // a branch representing local development that will cause a conflict
   await repo.checkoutBranch(BRANCH_CONFLICT, BRANCH_ROOT);
+  await wait();
   writeFileSync(FILE1, "replaced");
   await repo.add(FILE1);
+  await wait();
   await repo.commit("Replaced " + FILE1);
+  await wait();
 
   // a branch representing local development that won't cause a conflict
   await repo.checkoutBranch(BRANCH_NO_CONFLICT, BRANCH_ROOT);
+  await wait();
   writeFileSync(FILE1, TEST_TEXT + TEST_TEXT.substring(0, TEST_TEXT.length / 2));
   await repo.add(FILE1);
+  await wait();
   await repo.commit("Partial extension of " + FILE1);
+  await wait();
 }
 
 let mainCreated = false;
@@ -164,10 +186,14 @@ async function populateRepoWithSubmodules(): Promise<void> {
 
   writeFileSync(FILE1, TEST_TEXT);
   await repo.add(FILE1);
+  await wait();
   await repo.commit("Initial Commit");
+  await wait();
   await repo.subModule(["add", "-b", BRANCH_CONFLICT, GIT_MAIN_REPO, "has-conflict"]);
   await repo.subModule(["add", "-b", BRANCH_ROOT, GIT_MAIN_REPO, "has-update"]);
+  await wait();
   await repo.commit("Added submodules");
+  await wait();
 }
 
 let submoduleCreated = false;
@@ -210,16 +236,22 @@ export async function ensureRepoForPushes(): Promise<void> {
 
     writeFileSync(FILE2, TEST_TEXT);
     await repo.add(FILE2);
+    await wait();
     await repo.commit("Initial Commit on master for push-repo");
+    await wait();
 
     await repo.checkoutBranch(PUSH_REPO_EXISTING_BRANCH, "master");
+    await wait();
 
     writeFileSync(FILE1, TEST_TEXT);
     await repo.add(FILE1);
+    await wait();
     await repo.commit("Second commit to have some well known existing branch");
+    await wait();
 
     // go back to master, and have PUSH_REPO_EXISTING_BRANCH not checked out
     await repo.checkout("master");
+    await wait();
   } finally {
     chdir("..");
     submoduleCreated = true;
