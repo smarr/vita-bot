@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync } from "fs";
-import git, { ResetMode, SimpleGit } from "simple-git";
+import git, { ResetMode, SimpleGit, SimpleGitOptions } from "simple-git";
 
 /**
  * Set author and committer information on the repository.
@@ -68,7 +68,12 @@ export class GitOps {
       mkdirSync(basePath, { recursive: true });
     }
 
-    this.repo = git(basePath);
+    const options: SimpleGitOptions = {
+      baseDir: basePath,
+      binary: 'git',
+      maxConcurrentProcesses: 1
+    }
+    this.repo = git(options);
     this.repo.silent(true);
 
     setAuthorInfo(this.repo, authorName, authorEmail);

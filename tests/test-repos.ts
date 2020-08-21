@@ -4,7 +4,7 @@ import { expect } from "chai";
 import { writeFileSync, existsSync, mkdirSync, readFileSync } from "fs";
 import { chdir } from "process";
 import rimraf from "rimraf";
-import git, { SimpleGit } from "simple-git/promise";
+import git, { SimpleGit, SimpleGitOptions } from "simple-git";
 import { normalize } from "path";
 
 import yaml from "js-yaml";
@@ -45,7 +45,12 @@ export const TEST_BOT: BotDetails = {
 };
 
 function makeTestGit(path?: string): SimpleGit {
-  const repo = git(path);
+  const options: SimpleGitOptions = {
+    baseDir: path ? path : process.cwd(),
+    binary: 'git',
+    maxConcurrentProcesses: 1
+  };
+  const repo = git(options);
   setAuthorInfo(repo, TEST_BOT.name, TEST_BOT.email);
   return repo;
 }
@@ -75,7 +80,7 @@ export function expectCommitterInfo(commit: LogEntry, bot: BotDetails) {
   expect(commit.committerEmail).to.equal(bot.email);
 }
 
-async function populateMainRepo() {
+async function populateMainRepo(): Promise<void> {
   const repo = makeTestGit();
   await repo.init();
 
@@ -112,7 +117,7 @@ async function populateMainRepo() {
 
 let mainCreated = false;
 
-export async function ensureMainRepo() {
+export async function ensureMainRepo(): Promise<void> {
   if (mainCreated === true) {
     return;
   }
@@ -135,7 +140,7 @@ let downstreamCreated = false;
 /**
  * Create downstream repo with both branches, with and without conflict.
  */
-export async function ensureDownstreamRepo() {
+export async function ensureDownstreamRepo(): Promise<void> {
   if (downstreamCreated === true) {
     return;
   }
@@ -153,7 +158,7 @@ export async function ensureDownstreamRepo() {
   downstreamCreated = true;
 }
 
-async function populateRepoWithSubmodules() {
+async function populateRepoWithSubmodules(): Promise<void> {
   const repo = makeTestGit();
   await repo.init();
 
@@ -167,7 +172,7 @@ async function populateRepoWithSubmodules() {
 
 let submoduleCreated = false;
 
-export async function ensureRepoWithSubmodules() {
+export async function ensureRepoWithSubmodules(): Promise<void> {
   if (submoduleCreated === true) {
     return;
   }
@@ -189,7 +194,7 @@ export async function ensureRepoWithSubmodules() {
 
 let pushRepoCreated = false;
 
-export async function ensureRepoForPushes() {
+export async function ensureRepoForPushes(): Promise<void> {
   if (pushRepoCreated === true) {
     return;
   }
@@ -221,7 +226,7 @@ export async function ensureRepoForPushes() {
   }
 }
 
-export function ensureRepoDoesNotExist(path: string) {
+export function ensureRepoDoesNotExist(path: string): void {
   if (existsSync(path)) {
     rimraf.sync(path);
   }

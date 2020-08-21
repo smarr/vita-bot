@@ -4,7 +4,7 @@ import { GitOps, RebaseResult, LogEntry } from "./git-ops";
 import { GithubRepo, PullRequestsListResponseItem, PullRequestsListParams, PullRequestsCreateParams, IssuesCreateCommentParams, ReposListBranchesResponseItem } from "./github";
 import { readData, withData } from "./issue-metadata";
 
-import { CommitSummary } from "simple-git/promise";
+import { CommitSummary } from "simple-git";
 import { GitHubAPI } from "probot/lib/github";
 
 /** The standard git upstream remote name. */
